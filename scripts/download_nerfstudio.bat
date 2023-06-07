@@ -6,9 +6,9 @@ cd %~dp0
 
 call "%HOMEDRIVE%%HOMEPATH%\Anaconda3\scripts\activate.bat"
 
-call conda create --name nerfstudio_cool -y python=3.8
+call conda create --name nerfstudio -y python=3.8
 
-call conda activate nerfstudio_cool
+call conda activate nerfstudio
 
 call conda install -y git 
 
