@@ -58,10 +58,3 @@ Run the following command run the colmap script.
  It is recommended to save the model in the same location as your data for convenience and ease of use. This can be achieved by specifying the `-output-dir` argument in NerfStudio to the folder where your data is located. 
 
 
-  For the full Colamp options, use the `help` command, as follows:
-
-  ```
-    pyhton ../scripts/colmap.py --help
-  ```
-
-
