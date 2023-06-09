@@ -51,7 +51,7 @@ Run the following command run the colmap script.
     pyhton ..\scripts\colmap.py images --data_path \data\images
   ```
   
-  ## 2. NerfStudio ##
+  ## 3. NerfStudio ##
 
   Please refer to the NerfStudio [documentation](https://docs.nerf.studio/en/latest/index.html) to train a NeRF model using your data.
 
