@@ -38,17 +38,18 @@
 Run the following command run the colmap script.
 
   ```
-    pyhton ..\scripts\colmap.py {images or video} --data_path {path to images folder or video file}
+    python ..\scripts\colmap.py --data-path {path to images folder or video file} --input-type {images or video} 
   ```
 
   e.g.
   ```
-    pyhton ..\scripts\colmap.py video --data_path \data\Video.MOV
+    python ..\scripts\colmap.py --data-path .\data\Video.MOV --input-type video
   ```
-  or
+  
 
+To display all available options run:
   ```
-    pyhton ..\scripts\colmap.py images --data_path \data\images
+  python ..\scripts\colmap.py -h
   ```
   
   ## 3. NerfStudio ##
@@ -56,5 +57,4 @@ Run the following command run the colmap script.
   Please refer to the NerfStudio [documentation](https://docs.nerf.studio/en/latest/index.html) to train a NeRF model using your data.
 
  It is recommended to save the model in the same location as your data for convenience and ease of use. This can be achieved by specifying the `-output-dir` argument in NerfStudio to the folder where your data is located. 
-
 
