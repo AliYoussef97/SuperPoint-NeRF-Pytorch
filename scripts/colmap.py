@@ -19,7 +19,7 @@ class colmap_args:
     colmap_matcher: Literal["vocab_tree", "sequential", "exhaustive", "spatial", "transitive"] = "vocab_tree"
     """Colmap matching method to use."""
     nerfstudio_transforms: bool = True 
-    """Run nerfstudio on colmap output to find transforms.json"""
+    """Run nerfstudio on colmap's output to find transforms.json"""
 
 
 @dataclasses.dataclass
@@ -36,7 +36,7 @@ class main():
     Args:
         data_path: Path to data.
         input_type: Input type, choose images or video.
-        gpu: Set to 0 if the device is CPU, else set to 1 if CUDA is available.
+        gpu: Choose between gpu or no-gpu.
     """
 
     def __init__(self,
