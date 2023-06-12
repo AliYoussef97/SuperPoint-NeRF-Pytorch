@@ -16,13 +16,20 @@
 
   ### 1.2 Dependencies ###
 
-  This project uses [NerfStudio](https://github.com/nerfstudio-project/nerfstudio), run the following command, to install nerfstudio and it's dependencies.
+  This project uses Ffmpeg, Colmap and [NerfStudio](https://github.com/nerfstudio-project/nerfstudio), run the following commands, to download the dependencies.
 
   ```
     ../scripts/download_nerfstudio.bat
+    ../scripts/download_ffmpeg.bat
+    ../scripts/download_colmap.bat
   ```
 
-  **Note: NerfStudio uses CUDA 11.7 or 11.8, this project is built using CUDA 11.7. If you are using an older/newer version of CUDA, the following is the [CUDA Toolkit 11.7](https://developer.nvidia.com/cuda-11-7-0-download-archive) to needed.**
+  **Note:**
+  
+  **1. NerfStudio uses CUDA 11.7 or 11.8, this project is built using CUDA 11.7. If you are using an older/newer version of CUDA, the following is the [CUDA Toolkit 11.7](https://developer.nvidia.com/cuda-11-7-0-download-archive) needed.**
+  
+  **2. The download_colmap and download_ffmpeg batch files add colmap and ffmpeg to the User Environment Variable Path. 
+  After running the batch files, please close and reopen the terminal to account for the updated Environment Variables**
 
 
   ## 2. Running Colmap ##
