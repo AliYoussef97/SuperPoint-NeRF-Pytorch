@@ -1,0 +1,46 @@
+data:
+    name: 'Synthetic_dataset'
+    class_name: 'SyntheticShapes'
+    primitives: 'all'
+    truncate: {draw_ellipses: 0.3, draw_stripes: 0.2, gaussian_noise: 0.1}
+    data_dir: 'synthetic_shapes'
+    preprocessing:
+        blur_size: 21
+        resize: [120, 160]
+    augmentation:
+        photometric:
+            enable: true
+            enable_train: true
+            enable_val: false
+            primitives: [
+                'random_brightness', 'random_contrast', 'additive_speckle_noise',
+                'additive_gaussian_noise', 'additive_shade', 'motion_blur' ]
+            params:
+                random_brightness: {max_abs_change: 75}
+                random_contrast: {strength_range: [0.3, 1.8]}
+                additive_gaussian_noise: {stddev_range: [0, 15]}
+                additive_speckle_noise: {prob_range: [0, 0.0035]}
+                additive_shade:
+                    transparency_range: [-0.5, 0.8]
+                    kernel_size_range: [50, 100]
+                    nb_ellipses: 20
+                motion_blur: {max_kernel_size: 7}
+        homographic:
+            enable: true
+            enable_train: true
+            enable_val: false
+            params:
+                translation: true
+                rotation: true
+                scaling: true
+                perspective: true
+                scaling_amplitude: 0.2
+                n_scales: 5
+                n_angles: 25
+                perspective_amplitude_x: 0.2
+                perspective_amplitude_y: 0.2
+                patch_ratio: 0.8
+                max_angle: 1.57
+                allow_artifacts: true
+                translation_overflow: 0.05
+            valid_border_margin: 2
