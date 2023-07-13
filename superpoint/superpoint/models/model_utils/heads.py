@@ -29,7 +29,7 @@ class Detector_head(nn.Module):
         x_prob = x[:,:-1,:,:] # Dustbin removal (B,grid_size**2+1,H,W) -> (B,grid_size**2,H,W)
         x_prob = nn.functional.pixel_shuffle(x_prob, self.config["grid_size"]) # (B,grid_size**2,H,W) -> (B,1,H*grid_size,W*grid_size)
         x_prob = x_prob.squeeze(1) # Remove channel dimension -> (B,H*grid_size,W*grid_size)
-        output.setdefault("prob", x_prob)
+        output.setdefault("prob_heatmap", x_prob)
 
         if self.config["nms"]:
             
@@ -38,11 +38,10 @@ class Detector_head(nn.Module):
                               keep_top_k=self.config["top_k"]) for prob in x_prob]
             
             x_prob = torch.stack(x_prob) # (B,H*grid_size,W*grid_size)
-            output.setdefault("prob_nms", x_prob)
+            output.setdefault("prob_heatmap_nms", x_prob)
 
-        pred = torch.ge(x_prob,self.config["det_thresh"]).to(torch.int32) # (B,H*grid_size,W*grid_size)
-        
-        output.setdefault("pred", pred)
+        pred = torch.ge(x_prob,self.config["det_thresh"]).to(torch.int32) # (B,H*grid_size,W*grid_size)    
+        output.setdefault("pred_pts", pred)
 
         return output
 
@@ -62,8 +61,8 @@ class Descriptor_head(nn.Module):
         output = {}
         
         x = self.convDa(x)
-        x = self.convDb(x)
-        output.setdefault("desc_raw", x)   
+        x = self.convDb(x) # size -> (B,256,H/grid_size,W/grid_size)
+        output.setdefault("desc_raw", x)  
 
         desc = nn.functional.interpolate(x, scale_factor=self.config["grid_size"], mode='bicubic', align_corners=False) #(B,256,H,W)
         desc = nn.functional.normalize(x, p=2, dim=1) #(B,256,H,W)

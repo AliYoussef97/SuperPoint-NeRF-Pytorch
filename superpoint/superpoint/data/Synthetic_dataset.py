@@ -2,7 +2,6 @@ import torch
 import numpy as np
 import cv2
 from tqdm import tqdm
-import yaml
 from pathlib import Path
 from torch.utils.data import Dataset
 from superpoint.data.data_utils import Synthetic_data
@@ -62,13 +61,13 @@ class SyntheticShapes(Dataset):
         'gaussian_noise'
     ]
 
-    def __init__(self,config, task = "train" ,device="cpu") -> None:
+    def __init__(self, config, task = "train" ,device="cpu") -> None:
         super(SyntheticShapes,self).__init__()
 
         self.config = self.default_config
         self.config = dict_update(self.config, dict(config))
         self.device = device
-        self.action = ["training"] if task == "train" else ["validation"] if task == "val" else ["test"]
+        self.action = ["training"] if task == "train" else ["validation"] if task == "validation" else ["test"]
         self.samples = self._init_dataset()
         self.photometric_aug = Photometric_aug(self.config["augmentation"]["photometric"])
         self.homographic_aug = Homographic_aug(self.config["augmentation"]["homographic"], device=self.device)
@@ -142,7 +141,10 @@ class SyntheticShapes(Dataset):
                              for _im, _pt in 
                              zip(e[: int(truncate * len(e))],f[: int(truncate * len(f))])    
                              ])
-
+            
+            perm = np.random.RandomState(0).permutation(len(data))
+            data = [data[i] for i in perm]
+        
         return data
 
 
@@ -166,18 +168,18 @@ class SyntheticShapes(Dataset):
                                                                                 # coordinates are 1 and the rest are 0
         valid_mask = torch.ones_like(image) # size=(H,W)
         homography = torch.eye(3, device=self.device) # size=(H,W)
-       
+        
         data = {'raw':{'image':image, # size =(H,W)
                        'kpts':points, # size=(N,2)
-                       'kpts_map':kp_map, # size =(H,W)
-                       'mask':valid_mask, # size =(H,W)
+                       'kpts_heatmap':kp_map, # size =(H,W)
+                       'valid_mask':valid_mask, # size =(H,W)
                         },
                 'homography': homography} # size = (3,3)
         
         if (self.config["augmentation"]["photometric"]["enable_train"] and self.action[0] == "training" or
             self.config["augmentation"]["photometric"]["enable_val"] and self.action[0] == "validation"):
             
-            image = self.photometric_aug(data['raw']['image']) # size=(H,W)
+            image = self.photometric_aug(data['raw']['image']) # size=(H,W), apply photometric augmentation
             data['raw']['image'] = torch.tensor(image, dtype=torch.float32,device=self.device) # size=(H,W) 
                        
         
@@ -186,12 +188,13 @@ class SyntheticShapes(Dataset):
 
             image = data['raw']['image'].view(1,1,H,W)
             keypoints = data['raw']['kpts']
-            warped = self.homographic_aug(image, keypoints)
+            warped = self.homographic_aug(image, keypoints) # warp image and keypoints.
             
-            data["raw"] = warped["warp"]
-            data["homography"] = warped["homography"]        
+            data["raw"] = warped["warp"] # replace raw image with warped image
+            data["homography"] = warped["homography"]   # replace identity homography with homography used to warp image      
 
-        data['raw']['image'] /= 255.0
+
+        data['raw']['image'] /= 255.0 # normalize image
 
         
         if len(data['raw']['image'].size()) != 3:
@@ -199,24 +202,22 @@ class SyntheticShapes(Dataset):
                 
         return data
     
+
+    
     def batch_collator(self, batch):
         assert(len(batch)>0 and isinstance(batch[0], dict))
         
         images = torch.stack([item['raw']['image'] for item in batch])
         points = [item['raw']['kpts'] for item in batch]
-        kp_map = torch.stack([item['raw']['kpts_map'] for item in batch])
-        mask = torch.stack([item['raw']['mask'] for item in batch])
+        kp_heatmap = torch.stack([item['raw']['kpts_heatmap'] for item in batch])
+        valid_mask = torch.stack([item['raw']['valid_mask'] for item in batch])
         homography = torch.stack([item['homography'] for item in batch])
 
-        batch = {'raw':{'image':images, # size=(batch_size,1,H,W)
-                'kpts': points, # size=(N,2)
-                'kpts_map': kp_map, # size=(batch_size,H,W)
-                'mask': mask, # size=(batch_size,H,W)
-                },
-                'homography': homography} #size=(batch_size,1,3,3)
+        batch = {'raw':{'image': images.to(self.device), # size=(batch_size,1,H,W)
+                        'kpts': points, # size=(N,2)
+                        'kpts_heatmap': kp_heatmap.to(self.device), # size=(batch_size,H,W)
+                        'valid_mask': valid_mask.to(self.device), # size=(batch_size,H,W)
+                        },
+                'homography': homography.to(self.device)} #size=(batch_size,3,3)
         
         return batch
-
-
-
-    

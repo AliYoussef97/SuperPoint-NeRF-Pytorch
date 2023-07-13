@@ -11,7 +11,7 @@ class SuperPoint(nn.Module):
 
         self.detector_head = Detector_head(config["detector_head"])
 
-        if config["name"] == "superpoint":
+        if config["model_name"].lower() == "superpoint":
             self.descriptor_head = Descriptor_head(config["descriptor_head"])
     
     def forward(self,x):

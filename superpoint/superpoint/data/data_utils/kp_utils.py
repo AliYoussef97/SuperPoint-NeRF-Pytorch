@@ -2,7 +2,7 @@ import torch
 
 def filter_points(points, shape, return_mask=False):
     """
-     Remove points close to the border of the image.
+    Remove points close to the border of the image.
     :param points: (N,2) , (y,x)
     :param shape: (H,W)
     :return: filtered points
@@ -39,11 +39,11 @@ def warp_points(points, homography, device='cpu'):
     """
     if len(points.shape)==0:
         return points
-    
+
     points = torch.fliplr(points)
     
     batch_size = homography.shape[0]
-
+    
     points = torch.cat((points, torch.ones((points.shape[0], 1),device=device)),dim=1)
 
     warped_points = torch.tensordot(homography, points.transpose(1,0),dims=([2], [0]))

@@ -101,7 +101,6 @@ class Homographic_aug():
         homography = cv2.getPerspectiveTransform(np.float32(pts1), np.float32(pts2))
         homography = torch.tensor(homography,device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         homography = torch.inverse(homography)
-     
         return homography
     
 
@@ -123,8 +122,6 @@ class Homographic_aug():
 
         return mask.squeeze(1)
 
-    
-
 
     def __call__(self, image, points):
         
@@ -138,15 +135,15 @@ class Homographic_aug():
         warped_points = warp_points(points, homography, device=self.device) # size = (N,2)
         warped_points = filter_points(warped_points, torch.tensor(image_shape,device=self.device)) # size = (N,2)
         
-        warped_points_map = compute_keypoint_map(warped_points, image.shape[2:], device=self.device) # size = (H,W)
+        warped_points_heatmap = compute_keypoint_map(warped_points, image_shape, device=self.device) # size = (H,W)
 
         warped_valid_mask = self.compute_valid_mask(image_shape, homography, erosion=self.erosion).squeeze(0) #size = (H,W)
        
         data = {'warp':{'image': warped_image, #(1,H,W)
                         'kpts': warped_points, #(N,2)
-                        'kpts_map': warped_points_map, #(H,W)
-                        'mask':warped_valid_mask}, #(H,W)
-                'homography':homography, #(1,3,3)
+                        'kpts_heatmap': warped_points_heatmap, #(H,W)
+                        'valid_mask':warped_valid_mask}, #(H,W)
+                'homography':homography.squeeze(), #(3,3)
                 }
         
         return data

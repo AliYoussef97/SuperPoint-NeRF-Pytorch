@@ -1,4 +1,4 @@
-# Parts of code from SuperPoint[https://github.com/rpautrat/SuperPoint]
+# Parts of code inspiried from SuperPoint[https://github.com/rpautrat/SuperPoint]
 
 import cv2
 import numpy as np

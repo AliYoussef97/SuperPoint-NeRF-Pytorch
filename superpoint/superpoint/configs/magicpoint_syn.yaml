@@ -44,3 +44,24 @@ data:
                 allow_artifacts: true
                 translation_overflow: 0.05
             valid_border_margin: 2
+model:
+    script: 'SuperPoint'
+    class_name: 'SuperPoint'
+    model_name: 'magicpoint'
+    vgg_cn: [64,64,64,64,128,128,128,128]
+    detector_head: 
+        detector_dim: [128,256]
+        grid_size: 8
+        nms: 4
+        det_thresh: 0.001
+        top_k: 0
+train:
+    batch_size: 32
+    num_iters: 200000
+    betas: [0.9, 0.999]
+    learning_rate: 0.001
+
+validation_interval: 1000
+ckpt_name: 'magicpoint_syn_v1'
+iteration: 0
+pretraiend: 0
