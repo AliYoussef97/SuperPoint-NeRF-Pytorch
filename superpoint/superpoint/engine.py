@@ -39,16 +39,19 @@ class main():
             
             self.model.load_state_dict(model_state_dict)
             
-            if self.config["continue_traning"]:
-                self.iteration = pretrained_dict["iteration"]
-            else:
-                self.iteration = 0
+            self.iteration = pretrained_dict["iteration"]
+
         
         if task == "train":
-            getattr(self,task)(self.config, self.model, self.dataloader["train"], self.dataloader["validation"], self.iteration, self.device)
+            getattr(self,task)(self.config, self.model, self.dataloader["train"], self.dataloader["validation"], self.device)
     
 
-    def train(self, config, model, train_loader, validation_loader, iteration, device):
+    def train(self, config, model, train_loader, validation_loader, device):
+
+        if config["continue_training"]:
+            iteration = self.iteration
+        else:
+            iteration = 0
 
         train_val(config, model, train_loader, validation_loader, iteration, device)
         
