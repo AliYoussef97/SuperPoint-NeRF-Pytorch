@@ -63,5 +63,5 @@ train:
 
 validation_interval: 1000
 ckpt_name: 'magicpoint_syn_v1'
-iteration: 0
 pretraiend: 0
+continue_training: False

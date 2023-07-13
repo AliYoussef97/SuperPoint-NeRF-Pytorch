@@ -6,7 +6,7 @@ from superpoint.utils.metrics import metrics
 from superpoint.settings import EXPER_PATH
 from torch.utils.tensorboard import SummaryWriter
 
-def train_val(config, model, train_loader, validation_loader, device="cpu"):
+def train_val(config, model, train_loader, validation_loader, iteration=0, device="cpu"):
     print(f'\033[92m🚀 Training started for {config["model"]["model_name"].upper()} model on {config["data"]["class_name"]}\033[0m')
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"],betas=config["train"]["betas"])
@@ -19,13 +19,15 @@ def train_val(config, model, train_loader, validation_loader, device="cpu"):
     writer = SummaryWriter(log_dir = f'{checkpoint_path}\logs')
  
     max_iterations = config["train"]["num_iters"]    
-    Train = True
-    iter = config["iteration"] if config["iteration"] else 0
+    iter = iteration
+
+    pbar = tqdm(desc="Training", total=max_iterations, colour="green")
+    if iter !=0: pbar.update(iter)
+    
     running_loss = []
     
-    pbar = tqdm(desc="Training", total=max_iterations, colour="green")
-    if iter>0: pbar.update(iter)
-    
+    Train = True
+
     while Train:
         model.train()
         
