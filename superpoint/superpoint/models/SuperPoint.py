@@ -17,7 +17,7 @@ class SuperPoint(nn.Module):
     def forward(self,x):
         
         output = {}
-        
+
         feature_map = self.backbone(x)
 
         detector_output = self.detector_head(feature_map)

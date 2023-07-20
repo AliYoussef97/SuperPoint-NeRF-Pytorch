@@ -1,32 +1,34 @@
 import torch
 
-def filter_points(points, shape, return_mask=False):
+def filter_points(points, shape, device='cpu', return_mask=False):
     """
     Remove points close to the border of the image.
-    :param points: (N,2) , (y,x)
-    :param shape: (H,W)
-    :return: filtered points
-    
+    input:
+        points: (N,2)
+        shape: torch tensor (H,W)
+    output:
+        points: (N,2)
     """
     if len(points)!=0:
-        points = points.float()
-        shape = shape.float()
-        mask = (points >= 0) * (points <= shape-1)
-        mask = (torch.prod(mask, dim=-1) == 1)
+        mask = (points >= 0) & (points <= torch.tensor(shape,dtype=torch.float32,device=device)-1)
+        mask = torch.logical_and(mask[:,0], mask[:,1])
         if return_mask:
-            return points[mask], mask
-        return points [mask]
+            return points[mask], mask    
+        return points[mask]
     else:
         return points
 
 def compute_keypoint_map(points, shape, device='cpu'):
     """
-    :param shape: (H, W)
-    :param points: (N,2)
-    :return:
+    input:
+        points: (N,2)
+        shape: torch tensor (H,W)
+    output:
+        kmap: (H,W)
     """
-    coord = torch.minimum(torch.round(points).type(torch.int), torch.tensor(shape,device=device)-1)
-    kmap = torch.zeros((shape),dtype=torch.int, device=device)
+    coord = torch.minimum(torch.round(points).type(torch.int32), 
+                          torch.tensor(shape,dtype=torch.int32,device=device)-1)
+    kmap = torch.zeros((shape), dtype=torch.int32, device=device)   
     kmap[coord[:,0],coord[:,1]] = 1
     return kmap
 

@@ -1,19 +1,19 @@
 from tqdm import tqdm
 import torch
+import numpy as np
 from pathlib import Path
 from superpoint.utils.losses import detector_loss, descriptor_loss
 from superpoint.utils.metrics import metrics
-from superpoint.settings import EXPER_PATH
+from superpoint.settings import CKPT_PATH
 from torch.utils.tensorboard import SummaryWriter
 
 def train_val(config, model, train_loader, validation_loader, iteration=0, device="cpu"):
     print(f'\033[92m🚀 Training started for {config["model"]["model_name"].upper()} model on {config["data"]["class_name"]}\033[0m')
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"],betas=config["train"]["betas"])
+    optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
 
-    
     checkpoint_name = config["ckpt_name"]
-    checkpoint_path = Path(EXPER_PATH,checkpoint_name)
+    checkpoint_path = Path(CKPT_PATH,checkpoint_name)
     checkpoint_path.mkdir(parents=True,exist_ok=True)   
 
     writer = SummaryWriter(log_dir = f'{checkpoint_path}\logs')
@@ -28,14 +28,14 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
     
     Train = True
 
-    while Train:
-        model.train()
-        
+    model.train()
+    
+    while Train: 
         for batch in train_loader:
             
-            if config["model"]["model_name"] == "magicpoint" and config["data"]["class_name"] == "COCO":
-                print("Loading COCO data")
+            if config["model"]["model_name"] == "magicpoint" and config["data"]["name"] != "Synthetic_dataset":
                 batch["raw"] = batch["warp"]
+
 
             output = model(batch["raw"]["image"])
 
@@ -47,8 +47,9 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
             
             loss = det_loss
             
+
             if config["model"]["model_name"] != "magicpoint":
-                print("Superpoint model")
+
                 warped_output = model(batch["warp"]["image"])
 
                 det_loss_warped = detector_loss(warped_output["detector_output"]["logits"],
@@ -64,11 +65,11 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
                                             batch["warp"]["valid_mask"],
                                             device=device)
                 
-                loss += det_loss_warped + desc_loss
+                loss += (det_loss_warped + desc_loss)
 
             running_loss.append(loss.item())
 
-            model.zero_grad()
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
@@ -77,8 +78,10 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
             
             if iter % config["validation_interval"] == 0:
 
-                running_loss = sum(running_loss)/float(len(running_loss))            
+                running_loss = np.mean(running_loss)           
 
+                model.eval()
+                
                 running_val_loss, precision, recall = validate(config, model, validation_loader, device=device)
 
                 model.train()
@@ -87,7 +90,7 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
                             "model_state_dict":model.state_dict()},
                             f'{checkpoint_path}\{checkpoint_name}.pth')
                 
-                tqdm.write('Iteration: {}, Running Training loss: {:.3f}, Running Validation loss: {:.3f}, Precision: {:.3f}, Recall: {:.3f}'
+                tqdm.write('Iteration: {}, Running Training loss: {:.4f}, Running Validation loss: {:.4f}, Precision: {:.4f}, Recall: {:.4f}'
                            .format(iter, running_loss, running_val_loss, precision, recall))
 
                 writer.add_scalar("Training loss", running_loss, iter)
@@ -96,6 +99,7 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
                 writer.add_scalar("Recall", recall, iter)
                 
                 running_loss = []
+                
 
             if iter == max_iterations:
 
@@ -112,8 +116,6 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
             
 def validate(config, model, validation_loader, device= "cpu"):
     
-    model.eval()
-
     running_val_loss = []
     precision = []
     recall = []
@@ -121,8 +123,8 @@ def validate(config, model, validation_loader, device= "cpu"):
     with torch.no_grad():
         for val_batch in tqdm(validation_loader, desc="Validation",colour="blue"):
             
-            if config["model"]["model_name"] == "magicpoint" and config["data"]["class_name"] == "COCO":
-                print("VAL Loading COCO data")
+            if config["model"]["model_name"] == "magicpoint" and config["data"]["name"] != "Synthetic_dataset":
+
                 val_batch["raw"] = val_batch["warp"]
 
 
@@ -137,9 +139,8 @@ def validate(config, model, validation_loader, device= "cpu"):
             val_loss = val_det_loss
             
             if config["model"]["model_name"] != "magicpoint":
-                print(" VAL Superpoint model")
 
-                val_warped_output = model(val_batch["warped"]["image"])
+                val_warped_output = model(val_batch["warp"]["image"])
 
                 val_det_loss_warped = detector_loss(val_warped_output["detector_output"]["logits"],
                                                     val_batch["warp"]["kpts_heatmap"],
@@ -154,7 +155,7 @@ def validate(config, model, validation_loader, device= "cpu"):
                                                 val_batch["warp"]["valid_mask"],
                                                 device=device)
                 
-                val_loss += val_det_loss_warped + val_desc_loss
+                val_loss += (val_det_loss_warped + val_desc_loss)
             
             running_val_loss.append(val_loss.item())
 
@@ -163,8 +164,8 @@ def validate(config, model, validation_loader, device= "cpu"):
             precision.append(metric["precision"])
             recall.append(metric["recall"])
         
-        running_val_loss = sum(running_val_loss)/float(len(running_val_loss))
-        precision = sum(precision)/float(len(precision))
-        recall = sum(recall)/float(len(recall))
+        running_val_loss = np.mean(running_val_loss)
+        precision = np.mean(precision)
+        recall = np.mean(recall)
         
     return running_val_loss, precision, recall

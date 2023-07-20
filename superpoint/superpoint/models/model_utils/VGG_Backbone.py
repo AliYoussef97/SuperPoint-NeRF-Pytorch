@@ -2,16 +2,19 @@ import torch.nn as nn
 
 
 class VGG_Block(nn.Module):
-    def __init__(self, input, output, kn_size=3, pad=1, batch_norm=True, activation=True, maxpool=False):
+    def __init__(self, input_dim, output_dim, kn_size=3, pad=1, batch_norm=True, activation=True, maxpool=False):
         super().__init__()
+        self.batch_norm = batch_norm
+        self.activation = activation
+        self.maxpool = maxpool
 
-        self.conv2d = nn.Conv2d(input,output,kernel_size=kn_size, stride=1, padding=pad)
+        self.conv2d = nn.Conv2d(input_dim, output_dim, kernel_size=kn_size, stride=1, padding=pad)
         
         if activation:
             self.relu = nn.ReLU(inplace=True)
         
         if batch_norm:
-            self.norm = nn.BatchNorm2d(output)
+            self.norm = nn.BatchNorm2d(output_dim)
         
         if maxpool:
             self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -21,13 +24,13 @@ class VGG_Block(nn.Module):
 
         x = self.conv2d(x)
         
-        if hasattr(self, 'relu'):
+        if self.activation:
             x = self.relu(x)
         
-        if hasattr(self, 'norm'):
+        if self.batch_norm:
             x = self.norm(x)
         
-        if hasattr(self, 'maxpool'):
+        if self.maxpool:
             x = self.maxpool(x) 
         
         return x

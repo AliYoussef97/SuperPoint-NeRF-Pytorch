@@ -12,6 +12,7 @@ data:
             enable: true
             enable_train: true
             enable_val: false
+            enable_test: false
             primitives: [
                 'random_brightness', 'random_contrast', 'additive_speckle_noise',
                 'additive_gaussian_noise', 'additive_shade', 'motion_blur' ]
@@ -29,6 +30,7 @@ data:
             enable: true
             enable_train: true
             enable_val: false
+            enable_test: false
             params:
                 translation: true
                 rotation: true
@@ -58,10 +60,9 @@ model:
 train:
     batch_size: 32
     num_iters: 200000
-    betas: [0.9, 0.999]
     learning_rate: 0.001
 
 validation_interval: 1000
 ckpt_name: 'magicpoint_syn_v1'
-pretraiend: 0
+pretraiend: False
 continue_training: False

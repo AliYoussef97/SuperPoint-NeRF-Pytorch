@@ -7,7 +7,7 @@ from superpoint.data.data_utils.config_update import dict_update
 from superpoint.data.data_utils.kp_utils import filter_points, compute_keypoint_map, warp_points
 import kornia.geometry.transform as tf
 import kornia
-
+import matplotlib.pyplot as plt
 
 class Homographic_aug():
     def __init__(self, config, device="cpu") -> dict:
@@ -16,9 +16,9 @@ class Homographic_aug():
         self.device = device
 
 
-    def sample_homography(self, shape, translation=True, rotation=True, scaling=True, perspective=True, scaling_amplitude=0.2,
-                          n_scales=5, n_angles=25, perspective_amplitude_x=0.2,perspective_amplitude_y=0.2,
-                          patch_ratio=0.8,max_angle=1.57,allow_artifacts=True,translation_overflow=0.05):
+    def sample_homography(self, shape, translation=True, rotation=True, scaling=True, perspective=True, scaling_amplitude=0.1,
+                          n_scales=5, n_angles=25, perspective_amplitude_x=0.1,perspective_amplitude_y=0.1,
+                          patch_ratio=0.5,max_angle=1.57,allow_artifacts=False,translation_overflow=0.):
         
         std_trunc = 2
 
@@ -55,9 +55,9 @@ class Homographic_aug():
             center = np.mean(pts2, axis=0, keepdims=True)
             scaled = (pts2 - center)[np.newaxis, :, :] * scales[:, np.newaxis, np.newaxis] + center
             if allow_artifacts:
-                valid = np.arange(n_scales)  # all scales are valid except scale=1
+                valid = np.arange(1,n_scales+1)  # all scales are valid except scale=1
             else:
-                valid = (scaled >= 0.) * (scaled < 1.)
+                valid = (scaled >= 0.) * (scaled <= 1.)
                 valid = valid.prod(axis=1).prod(axis=1)
                 valid = np.where(valid)[0]
             idx = valid[np.random.randint(valid.shape[0], size=1)].squeeze().astype(int)
@@ -84,9 +84,9 @@ class Homographic_aug():
             rotated = np.matmul( (pts2 - center)[np.newaxis,:,:], rot_mat) + center
 
             if allow_artifacts:
-                valid = np.arange(n_angles)  # all scales are valid except scale=1
+                valid = np.arange(1,n_angles+1)  # all scales are valid except scale=1
             else:
-                valid = (rotated >= 0.) * (rotated < 1.)
+                valid = (rotated >= 0.) * (rotated <= 1.)
                 valid = valid.prod(axis=1).prod(axis=1)
                 valid = np.where(valid)[0]
             idx = valid[np.random.randint(valid.shape[0], size=1)].squeeze().astype(int)
@@ -101,6 +101,7 @@ class Homographic_aug():
         homography = cv2.getPerspectiveTransform(np.float32(pts1), np.float32(pts2))
         homography = torch.tensor(homography,device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         homography = torch.inverse(homography)
+        
         return homography
     
 
@@ -111,16 +112,20 @@ class Homographic_aug():
         batch_size = homography.shape[0]
 
         image = torch.ones(tuple([batch_size,1,*shape]),device=self.device, dtype=torch.float32)
-        mask = tf.warp_perspective(image, homography, shape, mode="nearest",align_corners=True)
+        mask = tf.warp_perspective(image, homography, (shape), mode="nearest", align_corners=True)
+        #mask = mask.squeeze(1).cpu().numpy()
 
         if erosion>0:
 
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erosion*2,)*2)
             kernel = torch.tensor(kernel,device=self.device, dtype=torch.float32)
-            origin = ((kernel.shape[0]-1)//2, (kernel.shape[1]-1)//2)
-            mask = kornia.morphology.erosion(mask,kernel,origin=origin)
 
-        return mask.squeeze(1)
+            #for i in range(batch_size):
+            #    mask[i, :, :] = cv2.erode(mask[i, :, :], kernel, iterations=1)
+            
+            mask = kornia.morphology.erosion(mask,kernel)
+
+        return mask.to(torch.int32)
 
 
     def __call__(self, image, points):
@@ -129,20 +134,20 @@ class Homographic_aug():
         
         homography = self.sample_homography(shape=image_shape,**self.config) # size= (1,3,3)
         
-        warped_image = tf.warp_perspective(image, homography, (image_shape), mode="bilinear" ,align_corners=True) # size = (1,1,H,W)
-        warped_image = warped_image.view(1,*image_shape) # size = (1,H,W)
+        warped_image = tf.warp_perspective(image, homography, (image_shape), mode="bilinear", align_corners=True) # size = (H,W)
         
+        warped_valid_mask = self.compute_valid_mask(image_shape, homography, erosion=self.erosion) #size = (1,1,H,W)
+
         warped_points = warp_points(points, homography, device=self.device) # size = (N,2)
-        warped_points = filter_points(warped_points, torch.tensor(image_shape,device=self.device)) # size = (N,2)
+        warped_points = filter_points(warped_points, image_shape, device=self.device) # size = (N,2)
         
         warped_points_heatmap = compute_keypoint_map(warped_points, image_shape, device=self.device) # size = (H,W)
 
-        warped_valid_mask = self.compute_valid_mask(image_shape, homography, erosion=self.erosion).squeeze(0) #size = (H,W)
-       
-        data = {'warp':{'image': warped_image, #(1,H,W)
+
+        data = {'warp':{'image': warped_image.squeeze(), #(H,W)
                         'kpts': warped_points, #(N,2)
                         'kpts_heatmap': warped_points_heatmap, #(H,W)
-                        'valid_mask':warped_valid_mask}, #(H,W)
+                        'valid_mask':warped_valid_mask.squeeze()}, #(H,W)
                 'homography':homography.squeeze(), #(3,3)
                 }
         

@@ -3,8 +3,6 @@ from superpoint.models.model_utils.VGG_Backbone import VGG_Block
 from superpoint.models.model_utils.sp_utils import box_nms
 import torch
 
-
-
 class Detector_head(nn.Module):
     def __init__(self, config):
         super(Detector_head,self).__init__()
@@ -18,32 +16,31 @@ class Detector_head(nn.Module):
 
     def forward(self,x):
         
-        output = {}
+        det_output = {}
         
         x = self.convPa(x)
-        x = self.convPb(x) # raw output -> (B,grid_size**2+1,H,W)
-        output.setdefault("logits", x)
+        logits = self.convPb(x) # raw output -> (B,grid_size**2+1,H,W)
+        det_output.setdefault("logits", logits)
 
-
-        x_prob = self.softmax(x) # probability -> (B,grid_size**2+1,H,W)
-        x_prob = x[:,:-1,:,:] # Dustbin removal (B,grid_size**2+1,H,W) -> (B,grid_size**2,H,W)
+        x_prob = self.softmax(logits) # probability -> (B,grid_size**2+1,H,W)
+        x_prob = x_prob[:,:-1,:,:] # Dustbin removal (B,grid_size**2+1,H,W) -> (B,grid_size**2,H,W)
         x_prob = nn.functional.pixel_shuffle(x_prob, self.config["grid_size"]) # (B,grid_size**2,H,W) -> (B,1,H*grid_size,W*grid_size)
         x_prob = x_prob.squeeze(1) # Remove channel dimension -> (B,H*grid_size,W*grid_size)
-        output.setdefault("prob_heatmap", x_prob)
+        det_output.setdefault("prob_heatmap", x_prob)
 
         if self.config["nms"]:
             
-            x_prob = [box_nms(prob=prob, # (H*grid_size,W*grid_size)
+            x_prob = [box_nms(prob=pb,
                               size=self.config["nms"],
-                              keep_top_k=self.config["top_k"]) for prob in x_prob]
+                              keep_top_k=self.config["top_k"]) for pb in x_prob]
             
             x_prob = torch.stack(x_prob) # (B,H*grid_size,W*grid_size)
-            output.setdefault("prob_heatmap_nms", x_prob)
+            det_output.setdefault("prob_heatmap_nms", x_prob)
 
         pred = torch.ge(x_prob,self.config["det_thresh"]).to(torch.int32) # (B,H*grid_size,W*grid_size)    
-        output.setdefault("pred_pts", pred)
+        det_output.setdefault("pred_pts", pred)
 
-        return output
+        return det_output
 
 
 
@@ -57,15 +54,15 @@ class Descriptor_head(nn.Module):
         self.convDb = VGG_Block(config["descriptor_dim"][1],config["descriptor_dim"][1] , kn_size=1, pad=0, activation=False)
 
     def forward(self,x):
-        
-        output = {}
+                
+        desc_output = {}
         
         x = self.convDa(x)
-        x = self.convDb(x) # size -> (B,256,H/grid_size,W/grid_size)
-        output.setdefault("desc_raw", x)  
+        desc_raw = self.convDb(x) # size -> (B,256,H/grid_size,W/grid_size)
+        desc_output.setdefault("desc_raw", desc_raw)  
 
-        desc = nn.functional.interpolate(x, scale_factor=self.config["grid_size"], mode='bicubic', align_corners=False) #(B,256,H,W)
-        desc = nn.functional.normalize(x, p=2, dim=1) #(B,256,H,W)
-        output.setdefault("desc", desc)
+        desc = nn.functional.interpolate(desc_raw, scale_factor=self.config["grid_size"], mode='bicubic', align_corners=False) #(B,256,H,W)
+        desc = nn.functional.normalize(desc, p=2, dim=1) #(B,256,H,W)
+        desc_output.setdefault("desc", desc)
 
-        return output
+        return desc_output

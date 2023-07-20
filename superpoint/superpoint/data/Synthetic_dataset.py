@@ -10,7 +10,8 @@ from superpoint.data.data_utils.kp_utils import filter_points, compute_keypoint_
 from superpoint.data.data_utils.photometric_augmentation import Photometric_aug
 from superpoint.data.data_utils.homographic_augmentation import Homographic_aug
 from superpoint.settings import DATA_PATH
-
+import torchvision
+import matplotlib.pyplot as plt
 
 class SyntheticShapes(Dataset):
 
@@ -61,11 +62,11 @@ class SyntheticShapes(Dataset):
         'gaussian_noise'
     ]
 
-    def __init__(self, config, task = "train" ,device="cpu") -> None:
+    def __init__(self, data_config, task = "train", device="cpu") -> None:
         super(SyntheticShapes,self).__init__()
 
         self.config = self.default_config
-        self.config = dict_update(self.config, dict(config))
+        self.config = dict_update(self.config, dict(data_config))
         self.device = device
         self.action = ["training"] if task == "train" else ["validation"] if task == "validation" else ["test"]
         self.samples = self._init_dataset()
@@ -151,22 +152,25 @@ class SyntheticShapes(Dataset):
     def __len__(self):
         return len(self.samples)
     
+    def read_image(self, image):
+        image = torchvision.io.read_file(image)
+        image = torchvision.io.decode_image(image,torchvision.io.ImageReadMode.GRAY)
+        return image.squeeze(0).to(torch.float32).to(self.device)
 
     def __getitem__(self, index):
         sample = self.samples[index]
 
-        image = cv2.imread(sample["image"], cv2.IMREAD_GRAYSCALE)
-
-        image = torch.as_tensor(image, dtype=torch.float32,device=self.device) #size=(H,W)
+        image = self.read_image(sample["image"])
         
         H,W = image.size()
         
-        points = np.load(sample["point"]) # load points
+        points = np.load(sample["point"]) # load points coordinates
         points = torch.as_tensor(points, dtype=torch.float32,device=self.device) # coordinates=(y,x), convert to tensor
-        points = filter_points(points, torch.tensor([H,W],device=self.device), return_mask=False) # filter points at border.
-        kp_map = compute_keypoint_map(points, image.size(), device=self.device) # create keypoint map/mask where keypoints
+        
+        kp_map = compute_keypoint_map(points, image.shape, device=self.device) # create keypoint map/mask where keypoints
                                                                                 # coordinates are 1 and the rest are 0
-        valid_mask = torch.ones_like(image) # size=(H,W)
+        valid_mask = torch.ones_like(image,device=self.device,dtype=torch.int32) # size=(H,W)
+        
         homography = torch.eye(3, device=self.device) # size=(H,W)
         
         data = {'raw':{'image':image, # size =(H,W)
@@ -177,15 +181,17 @@ class SyntheticShapes(Dataset):
                 'homography': homography} # size = (3,3)
         
         if (self.config["augmentation"]["photometric"]["enable_train"] and self.action[0] == "training" or
-            self.config["augmentation"]["photometric"]["enable_val"] and self.action[0] == "validation"):
+            self.config["augmentation"]["photometric"]["enable_val"] and self.action[0] == "validation" or
+            self.config["augmentation"]["photometric"]["enable_test"] and self.action[0] == "test"):
             
             image = self.photometric_aug(data['raw']['image']) # size=(H,W), apply photometric augmentation
             data['raw']['image'] = torch.tensor(image, dtype=torch.float32,device=self.device) # size=(H,W) 
                        
         
         if (self.config["augmentation"]["homographic"]["enable_train"] and self.action[0] == "training" or
-            self.config["augmentation"]["homographic"]["enable_val"] and self.action[0] == "validation"):
-
+            self.config["augmentation"]["homographic"]["enable_val"] and self.action[0] == "validation" or 
+            self.config["augmentation"]["homographic"]["enable_test"] and self.action[0] == "test"):
+            
             image = data['raw']['image'].view(1,1,H,W)
             keypoints = data['raw']['kpts']
             warped = self.homographic_aug(image, keypoints) # warp image and keypoints.
@@ -194,12 +200,8 @@ class SyntheticShapes(Dataset):
             data["homography"] = warped["homography"]   # replace identity homography with homography used to warp image      
 
 
-        data['raw']['image'] /= 255.0 # normalize image
-
+        data['raw']['image'] /= 255. # normalize image
         
-        if len(data['raw']['image'].size()) != 3:
-            data['raw']['image'] = data['raw']['image'].view(1,H,W)
-                
         return data
     
 
@@ -207,7 +209,7 @@ class SyntheticShapes(Dataset):
     def batch_collator(self, batch):
         assert(len(batch)>0 and isinstance(batch[0], dict))
         
-        images = torch.stack([item['raw']['image'] for item in batch])
+        images = torch.stack([item['raw']['image'].unsqueeze(0) for item in batch]) # size=(batch_size,1,H,W)
         points = [item['raw']['kpts'] for item in batch]
         kp_heatmap = torch.stack([item['raw']['kpts_heatmap'] for item in batch])
         valid_mask = torch.stack([item['raw']['valid_mask'] for item in batch])
