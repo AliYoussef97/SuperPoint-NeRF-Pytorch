@@ -113,7 +113,5 @@ class ExportDetections():
 
             pred = pred.cpu().numpy()
 
-            name = data["name"][0]
-
             np.save(save_path, pred)
         
