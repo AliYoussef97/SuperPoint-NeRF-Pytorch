@@ -62,13 +62,13 @@ class SyntheticShapes(Dataset):
         'gaussian_noise'
     ]
 
-    def __init__(self, data_config, task = "train", device="cpu") -> None:
+    def __init__(self, data_config, task = "training", device="cpu") -> None:
         super(SyntheticShapes,self).__init__()
 
         self.config = self.default_config
         self.config = dict_update(self.config, dict(data_config))
         self.device = device
-        self.action = ["training"] if task == "train" else ["validation"] if task == "validation" else ["test"]
+        self.action = ["training"] if task == "training" else ["validation"] if task == "validation" else ["test"]
         self.samples = self._init_dataset()
         self.photometric_aug = Photometric_aug(self.config["augmentation"]["photometric"])
         self.homographic_aug = Homographic_aug(self.config["augmentation"]["homographic"], device=self.device)
@@ -185,7 +185,7 @@ class SyntheticShapes(Dataset):
             self.config["augmentation"]["photometric"]["enable_test"] and self.action[0] == "test"):
             
             image = self.photometric_aug(data['raw']['image']) # size=(H,W), apply photometric augmentation
-            data['raw']['image'] = torch.tensor(image, dtype=torch.float32,device=self.device) # size=(H,W) 
+            data['raw']['image'] = torch.as_tensor(image, dtype=torch.float32,device=self.device) # size=(H,W) 
                        
         
         if (self.config["augmentation"]["homographic"]["enable_train"] and self.action[0] == "training" or
@@ -215,11 +215,11 @@ class SyntheticShapes(Dataset):
         valid_mask = torch.stack([item['raw']['valid_mask'] for item in batch])
         homography = torch.stack([item['homography'] for item in batch])
 
-        batch = {'raw':{'image': images.to(self.device), # size=(batch_size,1,H,W)
+        batch = {'raw':{'image': images, # size=(batch_size,1,H,W)
                         'kpts': points, # size=(N,2)
-                        'kpts_heatmap': kp_heatmap.to(self.device), # size=(batch_size,H,W)
-                        'valid_mask': valid_mask.to(self.device), # size=(batch_size,H,W)
+                        'kpts_heatmap': kp_heatmap, # size=(batch_size,H,W)
+                        'valid_mask': valid_mask, # size=(batch_size,H,W)
                         },
-                'homography': homography.to(self.device)} #size=(batch_size,3,3)
+                'homography': homography} #size=(batch_size,3,3)
         
         return batch

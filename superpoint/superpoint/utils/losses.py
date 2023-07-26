@@ -2,32 +2,37 @@ import torch
 import torch.nn.functional as F
 from superpoint.data.data_utils.kp_utils import warp_points
 
+
 def detector_loss(logits,
                   kpts_heatmap,
                   valid_mask=None, 
                   grid_size=8, 
                   device="cpu"):
-
+    
     labels = kpts_heatmap.unsqueeze(1).to(torch.float32) # (B,1,H,W)
     labels = torch.pixel_unshuffle(labels, grid_size) # (B,1,H,W) -> (B,grid_size**2,H/grid_size,W/grid_size)
     
-    dustbin = torch.ones(size=labels[:,0,:,:].shape).unsqueeze(1).to(device) # (B,1,H/grid_size,W/grid_size)
+    B,_,Hc,Wc = labels.shape
     
-    labels = torch.cat([2*labels,dustbin],dim=1) # (B,grid_size**2+1,H/grid_size,W/grid_size)
-
-    labels = torch.argmax(labels+torch.zeros(labels.shape,device=device).uniform_(0,0.1),dim=1) # (B,H/grid_size,W/grid_size)
-
-    valid_mask = torch.ones_like(kpts_heatmap) if valid_mask is None else valid_mask
-    valid_mask = valid_mask.unsqueeze(1).to(torch.float32)
+    dustbin = torch.ones(size=[B,1,Hc,Wc], device=device) # (B,1,H/grid_size,W/grid_size)
+    labels = torch.cat([2*labels, dustbin], dim=1) #(B,grid_size**2+1,H/grid_size,W/grid_size)
+    
+    random_tie_break = torch.distributions.uniform.Uniform(0,0.1).sample(labels.shape).to(device)
+    labels = torch.argmax(labels+random_tie_break, dim=1) # (B,H/grid_size,W/grid_size)
+    
+    valid_mask = torch.ones_like(kpts_heatmap,device=device) if valid_mask is None else valid_mask
+    valid_mask = valid_mask.unsqueeze(1).to(torch.float32) # (B,1,H,W)
     valid_mask = torch.pixel_unshuffle(valid_mask, grid_size)
-    valid_mask = torch.prod(valid_mask, dim=1).type(torch.float32) # (B,1,H/grid_size,W/grid_size)
-
+    valid_mask = torch.prod(valid_mask, dim=1) # (B,H/grid_size,W/grid_size)
+    
     det_loss = F.cross_entropy(logits, labels, reduction='none') # (B,H/grid_size,W/grid_size)
-    det_loss = torch.sum(det_loss*valid_mask,dim=(1,2))
-    det_loss = torch.div(det_loss, torch.sum(valid_mask+1e-10,dim=(1,2)))
-    det_loss = torch.mean(det_loss)
-
-    return det_loss
+    
+    weigthted_det_loss = torch.divide(torch.sum(det_loss*valid_mask, dim=(1,2)),
+                                      torch.sum(valid_mask, dim=(1,2))+1e-10)
+    
+    weigthted_det_loss = torch.mean(weigthted_det_loss)
+    
+    return weigthted_det_loss
 
 
 def descriptor_loss(config,descriptors,warped_descriptors,homographies,valid_mask=None,device="cpu"):

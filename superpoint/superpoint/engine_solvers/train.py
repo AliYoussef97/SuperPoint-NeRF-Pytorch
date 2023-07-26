@@ -7,7 +7,7 @@ from superpoint.utils.metrics import metrics
 from superpoint.settings import CKPT_PATH
 from torch.utils.tensorboard import SummaryWriter
 
-def train_val(config, model, train_loader, validation_loader, iteration=0, device="cpu"):
+def train_val(config, model, train_loader, validation_loader=None, iteration=0, device="cpu"):
     print(f'\033[92m🚀 Training started for {config["model"]["model_name"].upper()} model on {config["data"]["class_name"]}\033[0m')
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
@@ -33,10 +33,6 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
     while Train: 
         for batch in train_loader:
             
-            if config["model"]["model_name"] == "magicpoint" and config["data"]["name"] != "Synthetic_dataset":
-                batch["raw"] = batch["warp"]
-
-
             output = model(batch["raw"]["image"])
 
             det_loss = detector_loss(output["detector_output"]["logits"],
@@ -76,27 +72,32 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
             iter += 1
             pbar.update(1)
             
-            if iter % config["validation_interval"] == 0:
+            if iter % config["save_or_validation_interval"] == 0:
 
                 running_loss = np.mean(running_loss)           
+                writer.add_scalar("Training loss", running_loss, iter)
 
-                model.eval()
+                if validation_loader is not None:
+                    model.eval()
                 
-                running_val_loss, precision, recall = validate(config, model, validation_loader, device=device)
+                    running_val_loss, precision, recall = validate(config, model, validation_loader, device=device)
 
-                model.train()
+                    model.train()
+                        
+                    writer.add_scalar("Validation loss", running_val_loss, iter)
+                    writer.add_scalar("Precision", precision, iter)
+                    writer.add_scalar("Recall", recall, iter)
+                    
+                    tqdm.write('Iteration: {}, Running Training loss: {:.4f}, Running Validation loss: {:.4f}, Precision: {:.4f}, Recall: {:.4f}'
+                           .format(iter, running_loss, running_val_loss, precision, recall))
+                
+                else:
+                    tqdm.write('Iteration: {}, Running Training loss: {:.4f}'
+                           .format(iter, running_loss))
 
                 torch.save({"iteration":iter,
                             "model_state_dict":model.state_dict()},
                             f'{checkpoint_path}\{checkpoint_name}.pth')
-                
-                tqdm.write('Iteration: {}, Running Training loss: {:.4f}, Running Validation loss: {:.4f}, Precision: {:.4f}, Recall: {:.4f}'
-                           .format(iter, running_loss, running_val_loss, precision, recall))
-
-                writer.add_scalar("Training loss", running_loss, iter)
-                writer.add_scalar("Validation loss", running_val_loss, iter)
-                writer.add_scalar("Precision", precision, iter)
-                writer.add_scalar("Recall", recall, iter)
                 
                 running_loss = []
                 
@@ -113,59 +114,53 @@ def train_val(config, model, train_loader, validation_loader, iteration=0, devic
                 print(f'\033[92m✅ {config["model"]["model_name"].upper()} Training finished\033[0m')
                 break
 
-            
+@torch.no_grad()         
 def validate(config, model, validation_loader, device= "cpu"):
     
     running_val_loss = []
     precision = []
     recall = []
 
-    with torch.no_grad():
-        for val_batch in tqdm(validation_loader, desc="Validation",colour="blue"):
-            
-            if config["model"]["model_name"] == "magicpoint" and config["data"]["name"] != "Synthetic_dataset":
-
-                val_batch["raw"] = val_batch["warp"]
-
-
-            val_output = model(val_batch["raw"]["image"])
-            
-            val_det_loss = detector_loss(val_output["detector_output"]["logits"],
-                                         val_batch["raw"]["kpts_heatmap"],
-                                         val_batch["raw"]["valid_mask"],
-                                         config["model"]["detector_head"]["grid_size"],
-                                         device=device)
-            
-            val_loss = val_det_loss
-            
-            if config["model"]["model_name"] != "magicpoint":
-
-                val_warped_output = model(val_batch["warp"]["image"])
-
-                val_det_loss_warped = detector_loss(val_warped_output["detector_output"]["logits"],
-                                                    val_batch["warp"]["kpts_heatmap"],
-                                                    val_batch["warp"]["valid_mask"],
-                                                    config["model"]["detector_head"]["grid_size"],
-                                                    device=device)
-                
-                val_desc_loss = descriptor_loss(config["model"],
-                                                val_output["descriptor_output"]["desc_raw"],
-                                                val_warped_output["descriptor_output"]["desc_raw"],
-                                                val_batch["homography"],
-                                                val_batch["warp"]["valid_mask"],
-                                                device=device)
-                
-                val_loss += (val_det_loss_warped + val_desc_loss)
-            
-            running_val_loss.append(val_loss.item())
-
-            metric = metrics(val_output["detector_output"],val_batch["raw"])
-            
-            precision.append(metric["precision"])
-            recall.append(metric["recall"])
+    for val_batch in tqdm(validation_loader, desc="Validation",colour="blue"):
         
-        running_val_loss = np.mean(running_val_loss)
-        precision = np.mean(precision)
-        recall = np.mean(recall)
+        val_output = model(val_batch["raw"]["image"])
+        
+        val_det_loss = detector_loss(val_output["detector_output"]["logits"],
+                                        val_batch["raw"]["kpts_heatmap"],
+                                        val_batch["raw"]["valid_mask"],
+                                        config["model"]["detector_head"]["grid_size"],
+                                        device=device)
+        
+        val_loss = val_det_loss
+        
+        if config["model"]["model_name"] != "magicpoint":
+
+            val_warped_output = model(val_batch["warp"]["image"])
+
+            val_det_loss_warped = detector_loss(val_warped_output["detector_output"]["logits"],
+                                                val_batch["warp"]["kpts_heatmap"],
+                                                val_batch["warp"]["valid_mask"],
+                                                config["model"]["detector_head"]["grid_size"],
+                                                device=device)
+            
+            val_desc_loss = descriptor_loss(config["model"],
+                                            val_output["descriptor_output"]["desc_raw"],
+                                            val_warped_output["descriptor_output"]["desc_raw"],
+                                            val_batch["homography"],
+                                            val_batch["warp"]["valid_mask"],
+                                            device=device)
+            
+            val_loss += (val_det_loss_warped + val_desc_loss)
+        
+        running_val_loss.append(val_loss.item())
+
+        metric = metrics(val_output["detector_output"],val_batch["raw"])
+        
+        precision.append(metric["precision"])
+        recall.append(metric["recall"])
+    
+    running_val_loss = np.mean(running_val_loss)
+    precision = np.mean(precision)
+    recall = np.mean(recall)
         
     return running_val_loss, precision, recall

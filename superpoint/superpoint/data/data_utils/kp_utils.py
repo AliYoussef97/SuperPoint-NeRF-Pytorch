@@ -26,7 +26,7 @@ def compute_keypoint_map(points, shape, device='cpu'):
     output:
         kmap: (H,W)
     """
-    coord = torch.minimum(torch.round(points).type(torch.int32), 
+    coord = torch.minimum(torch.round(points).to(torch.int32), 
                           torch.tensor(shape,dtype=torch.int32,device=device)-1)
     kmap = torch.zeros((shape), dtype=torch.int32, device=device)   
     kmap[coord[:,0],coord[:,1]] = 1

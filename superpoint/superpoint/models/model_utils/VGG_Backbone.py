@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class VGG_Block(nn.Module):
     def __init__(self, input_dim, output_dim, kn_size=3, pad=1, batch_norm=True, activation=True, maxpool=False):
-        super().__init__()
+        super(VGG_Block,self).__init__()
         self.batch_norm = batch_norm
         self.activation = activation
         self.maxpool = maxpool

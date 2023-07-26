@@ -96,10 +96,9 @@ class Homographic_aug():
         shape = np.array(shape[::-1])  # different convention [y, x]
         pts1 *= shape[np.newaxis,:]
         pts2 *= shape[np.newaxis,:]
-
-        # this homography is the same with tf version and this line
+        
         homography = cv2.getPerspectiveTransform(np.float32(pts1), np.float32(pts2))
-        homography = torch.tensor(homography,device=self.device, dtype=torch.float32).unsqueeze(dim=0)
+        homography = torch.as_tensor(homography,dtype=torch.float32,device=self.device).unsqueeze(dim=0)
         homography = torch.inverse(homography)
         
         return homography
@@ -113,15 +112,11 @@ class Homographic_aug():
 
         image = torch.ones(tuple([batch_size,1,*shape]),device=self.device, dtype=torch.float32)
         mask = tf.warp_perspective(image, homography, (shape), mode="nearest", align_corners=True)
-        #mask = mask.squeeze(1).cpu().numpy()
 
         if erosion>0:
 
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (erosion*2,)*2)
-            kernel = torch.tensor(kernel,device=self.device, dtype=torch.float32)
-
-            #for i in range(batch_size):
-            #    mask[i, :, :] = cv2.erode(mask[i, :, :], kernel, iterations=1)
+            kernel = torch.as_tensor(kernel,device=self.device, dtype=torch.float32)
             
             mask = kornia.morphology.erosion(mask,kernel)
 
