@@ -76,6 +76,11 @@ class ExportDetections():
     @torch.no_grad()
     def homography_adaptation(self):
         for data in tqdm(self.dataloader, desc=f"Exporting detections",colour="green"):
+
+            name = data["name"][0]
+            save_path = Path(f"{self.output_dir}\\{name}.npy")
+            if save_path.exists():
+                continue
            
             probs = self.model(data["raw"]["image"])["detector_output"]["prob_heatmap"] # 1,H,W
             counts = torch.ones_like(probs) # 1,H,W
@@ -110,5 +115,5 @@ class ExportDetections():
 
             name = data["name"][0]
 
-            np.save(f"{self.output_dir}\\{name}.npy", pred)
+            np.save(save_path, pred)
         
