@@ -215,11 +215,11 @@ class SyntheticShapes(Dataset):
         valid_mask = torch.stack([item['raw']['valid_mask'] for item in batch])
         homography = torch.stack([item['homography'] for item in batch])
 
-        batch = {'raw':{'image': images, # size=(batch_size,1,H,W)
+        output = {'raw':{'image': images, # size=(batch_size,1,H,W)
                         'kpts': points, # size=(N,2)
                         'kpts_heatmap': kp_heatmap, # size=(batch_size,H,W)
                         'valid_mask': valid_mask, # size=(batch_size,H,W)
                         },
                 'homography': homography} #size=(batch_size,3,3)
         
-        return batch
+        return output

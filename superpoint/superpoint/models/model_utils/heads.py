@@ -19,13 +19,13 @@ class Detector_head(nn.Module):
         det_output = {}
         
         x = self.convPa(x)
-        logits = self.convPb(x) # raw output -> (B,grid_size**2+1,H,W)
+        logits = self.convPb(x) # raw output -> (B, grid_size**2+1, Hc, Wc)
         det_output.setdefault("logits", logits)
 
-        x_prob = self.softmax(logits) # probability -> (B,grid_size**2+1,H,W)
-        x_prob = x_prob[:,:-1,:,:] # Dustbin removal (B,grid_size**2+1,H,W) -> (B,grid_size**2,H,W)
-        x_prob = nn.functional.pixel_shuffle(x_prob, self.config["grid_size"]) # (B,grid_size**2,H,W) -> (B,1,H*grid_size,W*grid_size)
-        x_prob = x_prob.squeeze(1) # Remove channel dimension -> (B,H*grid_size,W*grid_size)
+        x_prob = self.softmax(logits) # probability -> (B, grid_size**2+1, Hc, Wc)
+        x_prob = x_prob[:,:-1,:,:] # Dustbin removal (B, grid_size**2+1, Hc, Wc) -> (B,grid_size**2, Hc, Wc)
+        x_prob = nn.functional.pixel_shuffle(x_prob, self.config["grid_size"]) # (B, grid_size**2, Hc, Wc) -> (B,1,H,W)
+        x_prob = x_prob.squeeze(1) # Remove channel dimension -> (B, H, W)
         det_output.setdefault("prob_heatmap", x_prob)
 
         if self.config["nms"]:
@@ -58,7 +58,7 @@ class Descriptor_head(nn.Module):
         desc_output = {}
         
         x = self.convDa(x)
-        desc_raw = self.convDb(x) # size -> (B,256,H/grid_size,W/grid_size)
+        desc_raw = self.convDb(x) # size -> (B, 256, Hc, Wc)
         desc_output.setdefault("desc_raw", desc_raw)  
 
         desc = nn.functional.interpolate(desc_raw, scale_factor=self.config["grid_size"], mode='bicubic', align_corners=False) #(B,256,H,W)
