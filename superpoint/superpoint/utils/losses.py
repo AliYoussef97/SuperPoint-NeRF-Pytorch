@@ -5,8 +5,9 @@ from superpoint.data.data_utils.kp_utils import warp_points
 
 def detector_loss(logits,
                   kpts_heatmap,
-                  valid_mask=None, 
+                  valid_mask, 
                   grid_size=8, 
+                  include_mask=False,
                   device="cpu"):
     
     labels = kpts_heatmap.unsqueeze(1).to(torch.float32) # (B,1,H,W)
@@ -20,7 +21,7 @@ def detector_loss(logits,
     random_tie_break = torch.distributions.uniform.Uniform(0,0.1).sample(labels.shape).to(device)
     labels = torch.argmax(labels+random_tie_break, dim=1) # (B,H/grid_size,W/grid_size)
     
-    valid_mask = torch.ones_like(kpts_heatmap,device=device) if valid_mask is None else valid_mask
+    valid_mask = torch.ones_like(kpts_heatmap,device=device) if include_mask is False else valid_mask
     valid_mask = valid_mask.unsqueeze(1).to(torch.float32) # (B,1,H,W)
     valid_mask = torch.pixel_unshuffle(valid_mask, grid_size)
     valid_mask = torch.prod(valid_mask, dim=1) # (B,H/grid_size,W/grid_size)

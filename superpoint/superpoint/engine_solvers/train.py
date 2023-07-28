@@ -7,7 +7,7 @@ from superpoint.utils.metrics import metrics
 from superpoint.settings import CKPT_PATH
 from torch.utils.tensorboard import SummaryWriter
 
-def train_val(config, model, train_loader, validation_loader=None, iteration=0, device="cpu"):
+def train_val(config, model, train_loader, validation_loader=None, mask_loss=False, iteration=0, device="cpu"):
     print(f'\033[92m🚀 Training started for {config["model"]["model_name"].upper()} model on {config["data"]["class_name"]}\033[0m')
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
@@ -39,6 +39,7 @@ def train_val(config, model, train_loader, validation_loader=None, iteration=0, 
                                      batch["raw"]["kpts_heatmap"],
                                      batch["raw"]["valid_mask"],
                                      config["model"]["detector_head"]["grid_size"],
+                                     include_mask=mask_loss,
                                      device=device)
             
             loss = det_loss
@@ -52,6 +53,7 @@ def train_val(config, model, train_loader, validation_loader=None, iteration=0, 
                                                 batch["warp"]["kpts_heatmap"],
                                                 batch["warp"]["valid_mask"],
                                                 config["model"]["detector_head"]["grid_size"],
+                                                include_mask=mask_loss,
                                                 device=device)
                 
                 desc_loss = descriptor_loss(config["model"],

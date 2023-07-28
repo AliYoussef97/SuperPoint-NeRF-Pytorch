@@ -11,11 +11,23 @@ from superpoint.engine_solvers.export import ExportDetections
 
 
 @dataclass
-class validate_training:
+class options:
+    """Training options.
+
+    Args:
+        validate_training: Validate during training.
+        include_mask_loss: Apply mask or no mask during loss (Do not include bordering artifacts by applying mask).
+    """
     validate_training: bool = False
+    include_mask_loss: bool = True
 
 @dataclass
 class export_pseudo_labels_split:
+    """Export pseudo labels on train, validation or test split.
+
+    Args:
+        split: The split to export pseudo labels on.
+    """
     split: Literal["training", "validation", "test"] = "training"
 
 
@@ -26,8 +38,6 @@ class main():
     Args:
         config_path: Path to configuration.
         task: The task to be performed.
-        training: Whether to validate during training or not.
-        pseudo_labels: Export pseudo labels on train, validation or test split.
     """
     def __init__(self,
                  config_path: str,
@@ -35,7 +45,7 @@ class main():
                                "export_pseudo_labels",
                                "HPatches_reliability",
                                "Hpatches_descriptors_evaluation"],
-                training:validate_training,
+                training:options,
                 pseudo_labels:export_pseudo_labels_split) -> None:
 
         with open(config_path, 'r') as f:
@@ -49,6 +59,8 @@ class main():
             self.model = get_model(self.config["model"], device=self.device)
             
             self.dataloader = get_loader(self.config, task, device=self.device, validate_training=training.validate_training)
+
+            self.mask_loss = training.include_mask_loss
 
             if self.config["pretraiend"]:
                 
@@ -99,7 +111,7 @@ class main():
         else:
             iteration = 0
         
-        train_val(self.config, self.model, self.dataloader["train"], self.dataloader["validation"], iteration, self.device)
+        train_val(self.config, self.model, self.dataloader["train"], self.dataloader["validation"], self.mask_loss, iteration, self.device)
     
 
 
