@@ -26,8 +26,10 @@ class export_pseudo_labels_split:
     """Export pseudo labels on train, validation or test split.
 
     Args:
+        enable_Homography_Adaptation: Enable homography adaptation duing export.
         split: The split to export pseudo labels on.
     """
+    enable_Homography_Adaptation: bool = True
     split: Literal["training", "validation", "test"] = "training"
 
 
@@ -83,6 +85,7 @@ class main():
         if task == "export_pseudo_labels":
 
             self.pseudo_split = pseudo_labels.split
+            self.enable_Homography_Adaptation = pseudo_labels.enable_Homography_Adaptation
 
             self.model = get_model(self.config["model"], device=self.device)
             self.dataloader = get_loader(self.config, task, device=self.device, export_split=self.pseudo_split)
@@ -117,7 +120,7 @@ class main():
 
     def export_pseudo_labels(self):
         
-        ExportDetections(self.config, self.model, self.dataloader, self.pseudo_split, self.device)
+        ExportDetections(self.config, self.model, self.dataloader, self.pseudo_split, self.enable_Homography_Adaptation, self.device)
         
 
 if __name__ == '__main__':

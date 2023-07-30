@@ -61,3 +61,29 @@ def warp_points(points, homography, device='cpu'):
     warped_points = warped_points.squeeze(0)
        
     return warped_points
+
+
+def warp_points_NeRF(points, depth, cam_intrinsic_matrix, input_rotation, input_translation, warp_rotation, warp_translation, device='cpu'):
+    if len(points.shape)==0:
+        return points
+
+    depth_values = [depth[int(p[0]),int(p[1])] for p in points]
+    depth_values = torch.stack(depth_values)
+
+    points = torch.fliplr(points)
+
+    points = torch.cat((points, torch.ones((points.shape[0], 1),device=device)),dim=1)
+   
+    warped_points = torch.tensordot(torch.linalg.inv(cam_intrinsic_matrix), points, dims=([1], [1]))
+    warped_points /= torch.linalg.norm(warped_points, dim=0)
+    warped_points *= depth_values
+    
+    warped_points = torch.tensordot(input_rotation, warped_points, dims=([1], [0])) + input_translation
+   
+    warped_points = torch.tensordot(torch.linalg.inv(warp_rotation), warped_points, dims=([1], [0])) - (torch.linalg.inv(warp_rotation) @ warp_translation)
+    warped_points = torch.tensordot(cam_intrinsic_matrix, warped_points, dims=([1], [0]))
+    warped_points = warped_points.transpose(1, 0)
+    warped_points = warped_points[:, :2] / warped_points[:, 2:]
+    warped_points = torch.flip(warped_points,dims=(1,))
+
+    return warped_points

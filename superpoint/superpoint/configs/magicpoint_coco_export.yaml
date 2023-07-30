@@ -40,4 +40,4 @@ model:
         nms: 4
         det_thresh: 0.015
         top_k: 0
-pretraiend: 'magicpoint_syn_v1\magicpoint_syn_v1.pth'
+pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
