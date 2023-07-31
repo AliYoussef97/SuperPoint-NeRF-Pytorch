@@ -17,9 +17,11 @@ class options:
     Args:
         validate_training: Validate during training.
         include_mask_loss: Apply mask or no mask during loss (Do not include bordering artifacts by applying mask).
+        nerf_loss: Whether to use Descriptor NeRF loss or normal SuperPoint Descriptor loss.
     """
     validate_training: bool = False
     include_mask_loss: bool = True
+    nerf_loss: bool = False
 
 @dataclass
 class export_pseudo_labels_split:
@@ -63,6 +65,7 @@ class main():
             self.dataloader = get_loader(self.config, task, device=self.device, validate_training=training.validate_training)
 
             self.mask_loss = training.include_mask_loss
+            self.nerf_loss = training.nerf_loss
 
             if self.config["pretraiend"]:
                 
@@ -114,7 +117,10 @@ class main():
         else:
             iteration = 0
         
-        train_val(self.config, self.model, self.dataloader["train"], self.dataloader["validation"], self.mask_loss, iteration, self.device)
+        train_val(self.config, self.model, 
+                  self.dataloader["train"], self.dataloader["validation"], 
+                  self.mask_loss, iteration,
+                  self.nerf_loss ,self.device)
     
 
 

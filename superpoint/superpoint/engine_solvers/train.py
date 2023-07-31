@@ -2,12 +2,12 @@ from tqdm import tqdm
 import torch
 import numpy as np
 from pathlib import Path
-from superpoint.utils.losses import detector_loss, descriptor_loss
+from superpoint.utils.losses import detector_loss, descriptor_loss, descriptor_loss_NeRF
 from superpoint.utils.metrics import metrics
 from superpoint.settings import CKPT_PATH
 from torch.utils.tensorboard import SummaryWriter
 
-def train_val(config, model, train_loader, validation_loader=None, mask_loss=False, iteration=0, device="cpu"):
+def train_val(config, model, train_loader, validation_loader=None, mask_loss=False, iteration=0, nerf_desc_loss=False, device="cpu"):
     print(f'\033[92m🚀 Training started for {config["model"]["model_name"].upper()} model on {config["data"]["class_name"]}\033[0m')
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
@@ -56,12 +56,21 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                                                 include_mask=mask_loss,
                                                 device=device)
                 
-                desc_loss = descriptor_loss(config["model"],
-                                            output["descriptor_output"]["desc_raw"],
-                                            warped_output["descriptor_output"]["desc_raw"],
-                                            batch["homography"],
-                                            batch["warp"]["valid_mask"],
-                                            device=device)
+                if nerf_desc_loss:
+                    desc_loss = descriptor_loss_NeRF(config["model"],
+                                                     batch,
+                                                     output["descriptor_output"]["desc_raw"],
+                                                     warped_output["descriptor_output"]["desc_raw"],
+                                                     batch["warp"]["valid_mask"],
+                                                     device=device)
+
+                else:    
+                    desc_loss = descriptor_loss(config["model"],
+                                                output["descriptor_output"]["desc_raw"],
+                                                warped_output["descriptor_output"]["desc_raw"],
+                                                batch["homography"],
+                                                batch["warp"]["valid_mask"],
+                                                device=device)
                 
                 loss += (det_loss_warped + desc_loss)
 
@@ -82,7 +91,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                 if validation_loader is not None:
                     model.eval()
                 
-                    running_val_loss, precision, recall = validate(config, model, validation_loader, device=device)
+                    running_val_loss, precision, recall = validate(config, model, validation_loader, nerf_desc_loss, device=device)
 
                     model.train()
                         
@@ -117,7 +126,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                 break
 
 @torch.no_grad()         
-def validate(config, model, validation_loader, device= "cpu"):
+def validate(config, model, validation_loader, nerf_desc_loss , device= "cpu"):
     
     running_val_loss = []
     precision = []
@@ -145,7 +154,17 @@ def validate(config, model, validation_loader, device= "cpu"):
                                                 config["model"]["detector_head"]["grid_size"],
                                                 device=device)
             
-            val_desc_loss = descriptor_loss(config["model"],
+            if nerf_desc_loss:
+                desc_loss = descriptor_loss_NeRF(config["model"],
+                                                 val_batch,
+                                                 val_output["descriptor_output"]["desc_raw"],
+                                                 val_warped_output["descriptor_output"]["desc_raw"],
+                                                 val_batch["warp"]["valid_mask"],
+                                                 device=device)
+
+
+            else:
+                val_desc_loss = descriptor_loss(config["model"],
                                             val_output["descriptor_output"]["desc_raw"],
                                             val_warped_output["descriptor_output"]["desc_raw"],
                                             val_batch["homography"],

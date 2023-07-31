@@ -34,20 +34,21 @@ class NeRF(Dataset):
         image_paths = [str(p) for p in image_paths]
         files = {"image_paths":image_paths, "names":names}
 
-        # Camera transformation
-        camera_transform_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\camera_transforms\\{self.action}")
-        camera_transform_paths = list(camera_transform_dir.iterdir())
-        camera_transform_paths = [str(p) for p in camera_transform_paths]
-        files["camera_transform_paths"] = camera_transform_paths
-
-        # Depth paths
-        depth_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\depth\\{self.action}")
-        depth_paths = list(depth_dir.iterdir())
-        depth_paths = [str(p) for p in depth_paths]
-        files["depth_paths"] = depth_paths
-        
         if self.config["has_labels"]:
 
+            # Camera transformation
+            camera_transform_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\camera_transforms\\{self.action}")
+            camera_transform_paths = list(camera_transform_dir.iterdir())
+            camera_transform_paths = [str(p) for p in camera_transform_paths]
+            files["camera_transform_paths"] = camera_transform_paths
+
+            # Depth paths
+            depth_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\depth\\{self.action}")
+            depth_paths = list(depth_dir.iterdir())
+            depth_paths = [str(p) for p in depth_paths]
+            files["depth_paths"] = depth_paths
+        
+            # Label paths
             label_dir = Path(f"{EXPER_PATH}\\{self.config['has_labels']}\\{self.action}")
             label_paths = []
             for n in files["names"]:
@@ -62,7 +63,9 @@ class NeRF(Dataset):
 
         
     def get_camera_intrinsic(self):
-        
+        '''
+        Calculate camera intrinsic matrix.
+        '''
         H , W = self.config["image_size"] 
 
         c_x = W//2
@@ -81,7 +84,9 @@ class NeRF(Dataset):
     
 
     def axis_transform(cam_matrix):
-        
+        '''
+        Transform camera transformation matrix axis.
+        '''
         reverse = np.diag([1, -1, -1, 1])
         cam_matrix =  cam_matrix @ reverse
 
@@ -129,24 +134,28 @@ class NeRF(Dataset):
 
         image = self.samples["image_paths"][index]  
         image = self.read_image(image)
+        
         input_name = self.samples["names"][index]
         
-        input_transformation = np.load(self.samples["camera_transform_paths"][index])
-        input_transformation = self.axis_transform(input_transformation)
-        input_rotation, input_translation = self.get_rotation_translation(input_transformation)
-    
-        input_depth = np.load(self.samples["depth_paths"][index])
-        input_depth = torch.as_tensor(input_depth, dtype=torch.float32, device=self.device)
 
-        data = {"raw":{'image':image, 
-                       'input_depth':input_depth, 
-                       'input_rotation':input_rotation, 
-                       'input_translation':input_translation},
-                "camera_intrinsic_matrix":self.camera_intrinsic_matrix,
-                "names":{'input_name':input_name}}
+        data = {"raw":{'image':image},
+                "name":input_name}
         
         # Add labels if exists.
         if self.config["has_labels"]: # Only for training/validaiton/test not exporting pseudo labels.
+
+            input_transformation = np.load(self.samples["camera_transform_paths"][index])
+            input_transformation = self.axis_transform(input_transformation)
+            input_rotation, input_translation = self.get_rotation_translation(input_transformation)
+    
+            input_depth = np.load(self.samples["depth_paths"][index])
+            input_depth = torch.as_tensor(input_depth, dtype=torch.float32, device=self.device)
+
+            data["raw"]["input_depth"] = input_depth
+            data["raw"]["input_rotation"] = input_rotation
+            data["raw"]["input_translation"] = input_translation
+            data["camera_intrinsic_matrix"] = self.camera_intrinsic_matrix
+
             points = self.samples["label_paths"][index]
             points = np.load(points)
             points = torch.as_tensor(points, dtype=torch.float32, device=self.device)
@@ -173,15 +182,16 @@ class NeRF(Dataset):
             data["warp"] = {"image":warped_image,
                             "warped_rotation":warped_rotation,
                             "warped_translation":warped_translation}
-            data["names"]["warped_name"] = warped_name
+            
+            data["warped_name"] = warped_name
 
             warped_points = warp_points_NeRF(data["raw"]["kpts"],
-                                             data["raw"]["input_depth"],
-                                             data["camera_intrinsic_matrix"],
-                                             data["raw"]["input_rotation"],
-                                             data["raw"]["input_translation"],
-                                             data["warp"]["warped_rotation"],
-                                             data["warp"]["warped_translation"],
+                                             data["raw"]["input_depth"].unsqueeze(0),
+                                             data["camera_intrinsic_matrix"].unsqueeze(0),
+                                             data["raw"]["input_rotation"].unsqueeze(0),
+                                             data["raw"]["input_translation"].unsqueeze(0),
+                                             data["warp"]["warped_rotation"].unsqueeze(0),
+                                             data["warp"]["warped_translation"].unsqueeze(0),
                                              self.device)
             
             warped_points = filter_points(warped_points, warped_image.shape, self.device)
@@ -212,40 +222,63 @@ class NeRF(Dataset):
 
         
         images = torch.stack([item['raw']['image'].unsqueeze(0) for item in batch]) # size=(batch_size,1,H,W)
-        input_depths = torch.stack([item['raw']['input_depth'] for item in batch]) # size=(batch_size,H,W)
-        input_rotations = torch.stack([item['raw']['input_rotation'] for item in batch]) # size=(batch_size,3,3)
-        input_translations = torch.stack([item['raw']['input_translation'] for item in batch]) # size=(batch_size,3,1)
-        input_names = [item['names']["input_name"] for item in batch]
-        intrinsic_matrix = batch["camera_intrinsic_matrix"]
+        
+        input_names = [item['name'] for item in batch]
 
-        output = {"raw":{"image":images,
-                         "input_depth":input_depths,
-                         "input_rotation":input_rotations,
-                         "input_translation":input_translations},
-                  "camera_intrinsic_matrix":intrinsic_matrix, # size=(3,3)
-                  "names":{"input_name":input_names}}
+        output = {"raw": {"image":images},
+                  "name":input_names}
+        
         
         if self.config["has_labels"]:
-            
+
+
+            input_depths = torch.stack([item['raw']['input_depth'] for item in batch]) # size=(batch_size,H,W)
+        
+            input_rotations = torch.stack([item['raw']['input_rotation'] for item in batch]) # size=(batch_size,3,3)
+        
+            input_translations = torch.stack([item['raw']['input_translation'] for item in batch]) # size=(batch_size,3,1)
+        
+            intrinsic_matrix = torch.stack([item['camera_intrinsic_matrix'] for item in batch]) # size=(batch_size,3,3)
+        
             points = [item['raw']['kpts'] for item in batch]
+
             kp_heatmap = torch.stack([item['raw']['kpts_heatmap'] for item in batch])
+
             valid_mask = torch.stack([item['raw']['valid_mask'] for item in batch])
-            
+
+            output["raw"]["input_depth"] = input_depths # size=(batch_size,H,W)
+            output["raw"]["input_rotation"] = input_rotations # size=(batch_size,3,3)
+            output["raw"]["input_translation"] = input_translations # size=(batch_size,3,1)
             output["raw"]["kpts"] = points # size=(N,2)
             output["raw"]["kpts_heatmap"] = kp_heatmap # size=(batch_size,H,W)
             output["raw"]["valid_mask"] = valid_mask # size=(batch_size,H,W)
+            output["camera_intrinsic_matrix"] = intrinsic_matrix # size=(batch_size,3,3)
         
 
         if self.config["warped_pair"]:
-            warped_images = torch.stack([item['warp']['image'].unsqueeze(0) for item in batch])
-            warped_names = [item['names']["warped_name"] for item in batch]
-            warped_rotations = torch.stack([item['warp']['warped_rotation'] for item in batch])
-            warped_translations = torch.stack([item['warp']['warped_translation'] for item in batch])
 
+            warped_images = torch.stack([item['warp']['image'].unsqueeze(0) for item in batch]) # size=(batch_size,1,H,W)
+            
+            warped_names = [item["warped_name"] for item in batch] 
+            
+            warped_rotations = torch.stack([item['warp']['warped_rotation'] for item in batch]) # size=(batch_size,3,3)
+            
+            warped_translations = torch.stack([item['warp']['warped_translation'] for item in batch]) # size=(batch_size,3,1)
+            
+            warped_points = [item['warp']['kpts'] for item in batch] # size=(N,2)
+            
+            warped_kp_heatmap = torch.stack([item['warp']['kpts_heatmap'] for item in batch]) # size=(batch_size,H,W)
+            
+            warped_valid_mask = torch.stack([item['warp']['valid_mask'] for item in batch]) # size=(batch_size,H,W)
+        
+            
             output["warp"] = {"image":warped_images, # size=(batch_size,1,H,W) 
                               "warped_rotation":warped_rotations, # size=(batch_size,3,3)
-                              "warped_translation":warped_translations} # size=(batch_size,3,1)
-
-            output["names"]["warped_name"] = warped_names
+                              "warped_translation":warped_translations, # size=(batch_size,3,1)
+                              "kpts":warped_points, # size=(N,2)
+                              "kpts_heatmap":warped_kp_heatmap, # size=(batch_size,H,W)
+                              "valid_mask":warped_valid_mask}
+            
+            output["warped_name"] = warped_names
         
         return output
