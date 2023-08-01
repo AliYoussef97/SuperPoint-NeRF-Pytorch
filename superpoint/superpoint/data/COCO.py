@@ -47,7 +47,7 @@ class COCO(Dataset):
             label_dir = Path(f"{EXPER_PATH}\\{self.config['has_labels']}\\{self.action}")
             label_paths = []
             for n in files["names"]:
-                p = Path(label_dir,'{}.np'.format(n))
+                p = Path(label_dir,'{}.npy'.format(n))
                 label_paths.append(str(p))
             files["label_paths"] = label_paths
         

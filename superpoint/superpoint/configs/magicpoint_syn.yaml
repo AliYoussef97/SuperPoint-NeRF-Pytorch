@@ -62,6 +62,6 @@ train:
     num_iters: 200000
     learning_rate: 0.001
 save_or_validation_interval: 1000
-ckpt_name: 'magicpoint_syn_v1'
+ckpt_name: 'magicpoint_syn_v1_continued_no_mask'
 pretraiend: False
 continue_training: False

@@ -1,7 +1,7 @@
 data:
     name: 'COCO'
     class_name: 'COCO'
-    has_labels: 'outputs\coco_export_v1'
+    has_labels: 'outputs\coco_export_v1_HA'
     preprocessing:
         resize: [240, 320] 
     batch_size: 32
@@ -52,7 +52,7 @@ model:
         det_thresh: 0.001
         top_k: 0
 train:
-    num_iters: 50000
+    num_iters: 20000
     learning_rate: 0.001
 save_or_validation_interval: 1000
 ckpt_name: 'magicpoint_COCO_v1_HA'

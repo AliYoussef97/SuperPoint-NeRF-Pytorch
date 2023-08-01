@@ -79,6 +79,8 @@ class main():
                         model_state_dict[k] = v
                 
                 self.model.load_state_dict(model_state_dict)
+                print(f'\033[92m✅ Loaded pretrained model \033[0m')
+
                 
                 self.iteration = pretrained_dict["iteration"]
 
@@ -105,6 +107,8 @@ class main():
                     model_state_dict[k] = v
             
             self.model.load_state_dict(model_state_dict)
+            print(f'\033[92m✅ Loaded pretrained model \033[0m')
+
             
             self.export_pseudo_labels()
 

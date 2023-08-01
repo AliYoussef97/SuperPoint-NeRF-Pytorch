@@ -1,7 +1,7 @@
 data:
     name: 'COCO'
     class_name: 'COCO'
-    experiment_name: 'coco_export_v1'
+    experiment_name: 'coco_export_v1_HA'
     preprocessing:
         resize: [240, 320] 
     has_labels: False
