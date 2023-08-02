@@ -119,3 +119,44 @@ class ExportDetections():
             pred = pred.cpu().numpy()
 
             np.save(save_path, pred)
+
+
+
+
+class Export_Hpatches_Repeatability():
+    def __init__(self, config, model, dataloader, device):
+        
+        self.config = config
+        self.model = model.eval()
+        self.dataloader = dataloader
+        self.device = device
+        self.output_dir = self._init_output_dir()
+        self.export_repeatability()
+
+    
+    def _init_output_dir(self):
+        """
+        Where to save the outputs.
+        """
+        output_dir = Path(f"{EXPER_PATH}\\repeatability\\{self.config['data']['experiment_name']}")
+        if not output_dir.exists():
+            os.makedirs(output_dir)
+        return output_dir
+
+    @torch.no_grad()
+    def export_repeatability(self):
+        
+        for i, data in enumerate(tqdm(self.dataloader, desc=f"Exporting repeatability detections", colour="green")):
+            
+            prob1 = self.model(data["image"])["detector_output"]["prob_heatmap_nms"] # 1,H,W
+            prob2 = self.model(data["warped_image"])["detector_output"]["prob_heatmap_nms"] # 1,H,W
+
+            output = {"image": data["image"].squeeze().cpu().numpy(),
+                      "warped_image": data["warped_image"].squeeze().cpu().numpy(),
+                      "prob": prob1.squeeze().cpu().numpy(),
+                      "warped_prob": prob2.squeeze().cpu().numpy(),
+                      "homography": data["homography"].squeeze().cpu().numpy()}
+
+            filename = data['name'][0] if 'name' in data else str(i)
+            save_path = Path(f"{self.output_dir}\\{filename}.npz")
+            np.savez_compressed(save_path, **output)

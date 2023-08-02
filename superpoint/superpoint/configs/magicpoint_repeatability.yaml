@@ -1,0 +1,20 @@
+data:
+    name: 'HPatches'
+    class_name: 'HPatches'
+    experiment_name: 'magicpoint_syn_i_repeatability_nms_4'
+    alteration: 'i' #or 'v' 
+    batch_size: 1
+    preprocessing:
+        resize: [240,320] 
+model:
+    script: 'SuperPoint'
+    class_name: 'SuperPoint'
+    model_name: 'magicpoint'
+    vgg_cn: [64,64,64,64,128,128,128,128]
+    detector_head: 
+        detector_dim: [128,256]
+        grid_size: 8
+        nms: 4
+        det_thresh: 0.001
+        top_k: 1000
+pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth' #Reapeatability for baseline model.

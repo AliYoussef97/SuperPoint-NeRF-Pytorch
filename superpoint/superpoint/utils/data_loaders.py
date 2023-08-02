@@ -46,4 +46,14 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                  shuffle=False,
                                  num_workers=0)
     
+
+    if task == "export_HPatches_Repeatability":
+        dataset = getattr(data_script,class_name)(config["data"], device=device)
+        data_loader = DataLoader(dataset,
+                                 batch_size=batch_size,
+                                 collate_fn=dataset.batch_collator,
+                                 shuffle=False,
+                                 num_workers=0)
+        
+    
     return data_loader

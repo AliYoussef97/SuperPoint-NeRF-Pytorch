@@ -1,7 +1,7 @@
 data:
     name: 'COCO'
     class_name: 'COCO'
-    has_labels: 'outputs\coco_export_v1_HA'
+    has_labels: 'outputs\coco_export_v2_HA' #'outputs\coco_export_v1_HA'
     preprocessing:
         resize: [240, 320] 
     batch_size: 32
@@ -55,6 +55,6 @@ train:
     num_iters: 20000
     learning_rate: 0.001
 save_or_validation_interval: 1000
-ckpt_name: 'magicpoint_COCO_v1_HA'
-pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
+ckpt_name: 'magicpoint_COCO_v2_HA' #'magicpoint_COCO_v1_HA'
+pretraiend: 'magicpoint_COCO_v1_HA\magicpoint_COCO_v1_HA.pth' #'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
 continue_training: False

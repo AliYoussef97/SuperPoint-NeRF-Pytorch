@@ -1,7 +1,7 @@
 data:
     name: 'COCO'
     class_name: 'COCO'
-    experiment_name: 'coco_export_v1_HA'
+    experiment_name: 'coco_export_v2_HA' #'coco_export_v1_HA'
     preprocessing:
         resize: [240, 320] 
     has_labels: False
@@ -40,4 +40,4 @@ model:
         nms: 4
         det_thresh: 0.015
         top_k: 0
-pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
+pretraiend: 'magicpoint_COCO_v1_HA\magicpoint_COCO_v1_HA.pth' #'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'

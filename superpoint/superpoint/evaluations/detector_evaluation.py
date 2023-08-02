@@ -5,11 +5,14 @@ from glob import glob
 from superpoint.settings import EXPER_PATH
 
 
-def get_paths(exper_name):
+def get_paths(exper_name, repeatability=False):
     """
     Return a list of paths to the outputs of the experiment.
     """
-    return glob(osp.join(EXPER_PATH, 'outputs/{}/*.npz'.format(exper_name)))
+    if repeatability:
+        return glob(osp.join(EXPER_PATH, 'repeatability/{}/*.npz'.format(exper_name)))
+    else:
+        return glob(osp.join(EXPER_PATH, 'outputs/{}/*.npz'.format(exper_name)))
 
 
 def compute_tp_fp(data, remove_zero=1e-4, distance_thresh=2, simplified=False):
@@ -171,7 +174,7 @@ def compute_repeatability(exper_name, keep_k_points=300,
         start = min(k, points.shape[0])
         return sorted_prob[-start:, :]
 
-    paths = get_paths(exper_name)
+    paths = get_paths(exper_name,repeatability=True)
     repeatability = []
     N1s = []
     N2s = []

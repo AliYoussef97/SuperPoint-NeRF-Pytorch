@@ -7,7 +7,7 @@ from superpoint.settings import CKPT_PATH
 from superpoint.utils.get_model import get_model
 from superpoint.utils.data_loaders import get_loader
 from superpoint.engine_solvers.train import train_val
-from superpoint.engine_solvers.export import ExportDetections
+from superpoint.engine_solvers.export import ExportDetections, Export_Hpatches_Repeatability
 
 
 @dataclass
@@ -23,6 +23,7 @@ class options:
     include_mask_loss: bool = True
     nerf_loss: bool = False
 
+
 @dataclass
 class export_pseudo_labels_split:
     """Export pseudo labels on train, validation or test split.
@@ -33,6 +34,7 @@ class export_pseudo_labels_split:
     """
     enable_Homography_Adaptation: bool = True
     split: Literal["training", "validation", "test"] = "training"
+
 
 
 @tyro.conf.configure(tyro.conf.FlagConversionOff)
@@ -47,7 +49,7 @@ class main():
                  config_path: str,
                  task: Literal["train",
                                "export_pseudo_labels",
-                               "HPatches_reliability",
+                               "export_HPatches_Repeatability",
                                "Hpatches_descriptors_evaluation"],
                 training:options,
                 pseudo_labels:export_pseudo_labels_split) -> None:
@@ -81,7 +83,6 @@ class main():
                 self.model.load_state_dict(model_state_dict)
                 print(f'\033[92m✅ Loaded pretrained model \033[0m')
 
-                
                 self.iteration = pretrained_dict["iteration"]
 
             self.train()
@@ -109,11 +110,32 @@ class main():
             self.model.load_state_dict(model_state_dict)
             print(f'\033[92m✅ Loaded pretrained model \033[0m')
 
-            
             self.export_pseudo_labels()
 
-    
 
+
+        if task == "export_HPatches_Repeatability":
+
+            self.model = get_model(self.config["model"], device=self.device)
+            self.dataloader = get_loader(self.config, task, device=self.device)
+
+            assert self.config["pretraiend"], "Use pretrained model to export HPatches reliability."
+
+            model_state_dict =  self.model.state_dict()
+
+            pretrained_dict = torch.load(f'{CKPT_PATH}\{self.config["pretraiend"]}', map_location=self.device)
+            pretrained_state = pretrained_dict["model_state_dict"]
+
+            for k,v in pretrained_state.items():
+                if k in model_state_dict.keys():
+                    model_state_dict[k] = v
+            
+            self.model.load_state_dict(model_state_dict)
+            print(f'\033[92m✅ Loaded pretrained model \033[0m')
+
+            self.export_HPatches_Repeatability()
+
+    
     def train(self):
 
         if self.config["continue_training"]:
@@ -124,14 +146,18 @@ class main():
         train_val(self.config, self.model, 
                   self.dataloader["train"], self.dataloader["validation"], 
                   self.mask_loss, iteration,
-                  self.nerf_loss ,self.device)
+                  self.nerf_loss, self.device)
     
-
 
     def export_pseudo_labels(self):
         
         ExportDetections(self.config, self.model, self.dataloader, self.pseudo_split, self.enable_Homography_Adaptation, self.device)
+
+
+    def export_HPatches_Repeatability(self):
         
+        Export_Hpatches_Repeatability(self.config, self.model, self.dataloader, self.device)
+
 
 if __name__ == '__main__':
     tyro.cli(main)
