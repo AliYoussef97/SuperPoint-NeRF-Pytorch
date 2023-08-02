@@ -1,3 +1,5 @@
+# This code are from Superpoint[https://github.com/rpautrat/SuperPoint]
+
 import numpy as np
 from os import path as osp
 from glob import glob
