@@ -157,21 +157,21 @@ def validate(config, model, validation_loader, nerf_desc_loss , device= "cpu"):
                                                 device=device)
             
             if nerf_desc_loss:
-                desc_loss = descriptor_loss_NeRF(config["model"],
-                                                 val_batch,
-                                                 val_output["descriptor_output"]["desc_raw"],
-                                                 val_warped_output["descriptor_output"]["desc_raw"],
-                                                 val_batch["warp"]["valid_mask"],
-                                                 device=device)
+                val_desc_loss = descriptor_loss_NeRF(config["model"],
+                                                     val_batch,
+                                                     val_output["descriptor_output"]["desc_raw"],
+                                                     val_warped_output["descriptor_output"]["desc_raw"],
+                                                     val_batch["warp"]["valid_mask"],
+                                                     device=device)
 
 
             else:
                 val_desc_loss = descriptor_loss(config["model"],
-                                            val_output["descriptor_output"]["desc_raw"],
-                                            val_warped_output["descriptor_output"]["desc_raw"],
-                                            val_batch["homography"],
-                                            val_batch["warp"]["valid_mask"],
-                                            device=device)
+                                                val_output["descriptor_output"]["desc_raw"],
+                                                val_warped_output["descriptor_output"]["desc_raw"],
+                                                val_batch["homography"],
+                                                val_batch["warp"]["valid_mask"],
+                                                device=device)
             
             val_loss += (val_det_loss_warped + val_desc_loss)
         
