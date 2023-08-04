@@ -62,6 +62,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                                                      output["descriptor_output"]["desc_raw"],
                                                      warped_output["descriptor_output"]["desc_raw"],
                                                      batch["warp"]["valid_mask"],
+                                                     include_mask=mask_loss,
                                                      device=device)
 
                 else:    
@@ -70,6 +71,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                                                 warped_output["descriptor_output"]["desc_raw"],
                                                 batch["homography"],
                                                 batch["warp"]["valid_mask"],
+                                                include_mask=mask_loss,
                                                 device=device)
                 
                 loss += (det_loss_warped + desc_loss)

@@ -86,12 +86,14 @@ class HPatches(Dataset):
         translation = torch.diag(torch.stack([torch.tensor(1.), torch.tensor(1.), torch.tensor(1.)]))    
         translation[0, -1] = pad_x
         translation[1, -1] = pad_y
+        translation = translation.to(torch.float32)
 
         pad_y = ((source_warped_size[0] * warped_s - target_size[0]) / torch.tensor(2.)).to(torch.int32)
         pad_x = ((source_warped_size[1] * warped_s - target_size[1]) / torch.tensor(2.)).to(torch.int32)
         warped_translation = torch.diag(torch.stack([torch.tensor(1.), torch.tensor(1.), torch.tensor(1.)]))
         warped_translation[0, -1] = -pad_x
         warped_translation[1, -1] = -pad_y
+        warped_translation = warped_translation.to(torch.float32)
 
         H = warped_translation @ down_scale @ homographies["homography"] @ up_scale @ translation
 
