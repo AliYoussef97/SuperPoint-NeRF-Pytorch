@@ -32,6 +32,7 @@ class Detector_head(nn.Module):
             
             x_prob = [box_nms(prob=pb,
                               size=self.config["nms"],
+                              min_prob=self.config["det_thresh"],
                               keep_top_k=self.config["top_k"]) for pb in x_prob]
             
             x_prob = torch.stack(x_prob) # (B,H*grid_size,W*grid_size)

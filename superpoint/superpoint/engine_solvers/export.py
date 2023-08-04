@@ -108,6 +108,7 @@ class ExportDetections():
             
             probs = [box_nms(prob=pb,
                              size=self.config["model"]["detector_head"]["nms"],
+                             min_prob=self.config["model"]["detector_head"]["det_thresh"],
                              keep_top_k=self.config["model"]["detector_head"]["top_k"]) for pb in probs]
             
             probs = torch.stack(probs) # 1,H,W
