@@ -93,7 +93,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                 if validation_loader is not None:
                     model.eval()
                 
-                    running_val_loss, precision, recall = validate(config, model, validation_loader, nerf_desc_loss, device=device)
+                    running_val_loss, precision, recall = validate(config, model, validation_loader, mask_loss, nerf_desc_loss, device=device)
 
                     model.train()
                         
@@ -128,7 +128,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                 break
 
 @torch.no_grad()         
-def validate(config, model, validation_loader, nerf_desc_loss , device= "cpu"):
+def validate(config, model, validation_loader, mask_loss, nerf_desc_loss , device= "cpu"):
     
     running_val_loss = []
     precision = []
@@ -142,6 +142,7 @@ def validate(config, model, validation_loader, nerf_desc_loss , device= "cpu"):
                                         val_batch["raw"]["kpts_heatmap"],
                                         val_batch["raw"]["valid_mask"],
                                         config["model"]["detector_head"]["grid_size"],
+                                        mask_loss,
                                         device=device)
         
         val_loss = val_det_loss
@@ -154,6 +155,7 @@ def validate(config, model, validation_loader, nerf_desc_loss , device= "cpu"):
                                                 val_batch["warp"]["kpts_heatmap"],
                                                 val_batch["warp"]["valid_mask"],
                                                 config["model"]["detector_head"]["grid_size"],
+                                                mask_loss,
                                                 device=device)
             
             if nerf_desc_loss:
@@ -162,6 +164,7 @@ def validate(config, model, validation_loader, nerf_desc_loss , device= "cpu"):
                                                      val_output["descriptor_output"]["desc_raw"],
                                                      val_warped_output["descriptor_output"]["desc_raw"],
                                                      val_batch["warp"]["valid_mask"],
+                                                     mask_loss,
                                                      device=device)
 
 
@@ -171,6 +174,7 @@ def validate(config, model, validation_loader, nerf_desc_loss , device= "cpu"):
                                                 val_warped_output["descriptor_output"]["desc_raw"],
                                                 val_batch["homography"],
                                                 val_batch["warp"]["valid_mask"],
+                                                mask_loss,
                                                 device=device)
             
             val_loss += (val_det_loss_warped + val_desc_loss)
