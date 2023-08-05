@@ -110,7 +110,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
 
                 torch.save({"iteration":iter,
                             "model_state_dict":model.state_dict()},
-                            f'{checkpoint_path}\{checkpoint_name}.pth')
+                            f'{checkpoint_path}\{checkpoint_name}_{iter}.pth')
                 
                 running_loss = []
                 
@@ -119,7 +119,7 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
 
                 torch.save({"iteration":iter,
                             "model_state_dict":model.state_dict()},
-                            f'{checkpoint_path}\{checkpoint_name}.pth')
+                            f'{checkpoint_path}\{checkpoint_name}_{iter}.pth')
                 Train = False
                 writer.flush()
                 writer.close()

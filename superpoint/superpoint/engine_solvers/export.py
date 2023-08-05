@@ -161,3 +161,51 @@ class Export_Hpatches_Repeatability():
             filename = data['name'][0] if 'name' in data else str(i)
             save_path = Path(f"{self.output_dir}\\{filename}.npz")
             np.savez_compressed(save_path, **output)
+
+
+
+
+class Export_Hpatches_Descriptors():
+    def __init__(self, config, model, dataloader, device):
+        
+        self.config = config
+        self.model = model.eval()
+        self.dataloader = dataloader
+        self.device = device
+        self.output_dir = self._init_output_dir()
+        self.export_descriptors()
+
+    
+    def _init_output_dir(self):
+        """
+        Where to save the outputs.
+        """
+        output_dir = Path(f"{EXPER_PATH}\\descriptors\\{self.config['data']['experiment_name']}")
+        if not output_dir.exists():
+            os.makedirs(output_dir)
+        return output_dir
+
+    @torch.no_grad()
+    def export_descriptors(self):
+        
+        for i, data in enumerate(tqdm(self.dataloader, desc=f"Exporting HPatches descriptors", colour="green")):
+
+            output_1 = self.model(data["image"]) 
+            prob1 = output_1["detector_output"]["prob_heatmap_nms"]
+            desc1 = output_1["descriptor_output"]["desc"] 
+
+            output_2 = self.model(data["warped_image"])
+            prob2 = output_2["detector_output"]["prob_heatmap_nms"] 
+            desc2 = output_2["descriptor_output"]["desc"] 
+
+            output = {"image": data["image"].squeeze().cpu().numpy(),
+                      "warped_image": data["warped_image"].squeeze().cpu().numpy(),
+                      "prob": prob1.squeeze().cpu().numpy(),
+                      "warped_prob": prob2.squeeze().cpu().numpy(),
+                      "desc": desc1.squeeze().cpu().numpy(),
+                      "warped_desc": desc2.squeeze().cpu().numpy(),
+                      "homography": data["homography"].squeeze().cpu().numpy()}
+
+            filename = data['name'][0] if 'name' in data else str(i)
+            save_path = Path(f"{self.output_dir}\\{filename}.npz")
+            np.savez_compressed(save_path, **output)

@@ -7,7 +7,7 @@ from superpoint.settings import CKPT_PATH
 from superpoint.utils.get_model import get_model
 from superpoint.utils.data_loaders import get_loader
 from superpoint.engine_solvers.train import train_val
-from superpoint.engine_solvers.export import ExportDetections, Export_Hpatches_Repeatability
+from superpoint.engine_solvers.export import ExportDetections, Export_Hpatches_Repeatability, Export_Hpatches_Descriptors
 
 
 @dataclass
@@ -50,7 +50,7 @@ class main():
                  task: Literal["train",
                                "export_pseudo_labels",
                                "export_HPatches_Repeatability",
-                               "Hpatches_descriptors_evaluation"],
+                               "export_HPatches_Descriptors"],
                 training:options,
                 pseudo_labels:export_pseudo_labels_split) -> None:
 
@@ -114,7 +114,7 @@ class main():
 
 
 
-        if task == "export_HPatches_Repeatability":
+        if task == "export_HPatches_Repeatability" or task == "export_HPatches_Descriptors":
 
             self.model = get_model(self.config["model"], device=self.device)
             self.dataloader = get_loader(self.config, task, device=self.device)
@@ -133,7 +133,11 @@ class main():
             self.model.load_state_dict(model_state_dict)
             print(f'\033[92m✅ Loaded pretrained model \033[0m')
 
-            self.export_HPatches_Repeatability()
+            if task == "export_HPatches_Repeatability":
+                self.export_HPatches_Repeatability()
+            
+            if task == "export_HPatches_Descriptors":
+                self.export_HPatches_Descriptors()
 
     
     def train(self):
@@ -157,6 +161,11 @@ class main():
     def export_HPatches_Repeatability(self):
         
         Export_Hpatches_Repeatability(self.config, self.model, self.dataloader, self.device)
+
+    
+    def export_HPatches_Descriptors(self):
+        
+        Export_Hpatches_Descriptors(self.config, self.model, self.dataloader, self.device)
 
 
 if __name__ == '__main__':

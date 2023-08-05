@@ -1,0 +1,23 @@
+data:
+    name: 'HPatches'
+    class_name: 'HPatches'
+    experiment_name: 'superpoint_descriptors_nms_4'
+    alteration: 'all' #or 'i' 'v' 
+    batch_size: 1
+    preprocessing:
+        resize: [480,640] 
+model:
+    script: 'SuperPoint'
+    class_name: 'SuperPoint'
+    model_name: 'superpoint'
+    vgg_cn: [64,64,64,64,128,128,128,128]
+    detector_head: 
+        detector_dim: [128,256]
+        grid_size: 8
+        nms: 4
+        det_thresh: 0.001
+        top_k: 1000
+    descriptor_head:
+        descriptor_dim: [128,256]
+        grid_size: 8
+pretraiend: 'superpoint_v1\superpoint_v1.pth' #Reapeatability for baseline model.

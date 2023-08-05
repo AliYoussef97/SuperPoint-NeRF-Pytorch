@@ -47,7 +47,7 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                  num_workers=0)
     
 
-    if task == "export_HPatches_Repeatability":
+    if task == "export_HPatches_Repeatability" or task == "export_HPatches_Descriptors":
         dataset = getattr(data_script,class_name)(config["data"], device=device)
         data_loader = DataLoader(dataset,
                                  batch_size=batch_size,
