@@ -36,13 +36,20 @@ def detector_loss(logits,
     return weigthted_det_loss
 
 
-def descriptor_loss(config,descriptors,warped_descriptors,homographies,valid_mask, include_mask=False, device="cpu"):
+def descriptor_loss(config,
+                    descriptors,
+                    warped_descriptors,
+                    homographies,
+                    valid_mask,
+                    include_mask=False,
+                    device="cpu"):
 
     grid_size = config["descriptor_head"]["grid_size"]
     lambda_d = config["descriptor_head"]["lambda_d"]
     lambda_loss = config["descriptor_head"]["lambda_loss"]
     positive_margin = config["descriptor_head"]["positive_margin"]
     negative_margin = config["descriptor_head"]["negative_margin"]
+    normalise_descriptors = config["descriptor_head"]["normalise_descriptors"]
 
     B, C, Hc, Wc = descriptors.shape
     
@@ -55,25 +62,29 @@ def descriptor_loss(config,descriptors,warped_descriptors,homographies,valid_mas
     warped_coord_cells = torch.reshape(warped_coord_cells, [B, Hc, Wc, 1, 1, 2]) # (B,Hc,Wc,1,1,2)
 
     cell_distances = torch.linalg.vector_norm(coord_cells - warped_coord_cells, ord=2, dim=-1) # (B,Hc,Wc,Hc,Wc)
-    s = (cell_distances<=(grid_size-0.5)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
+    s = (cell_distances<=(grid_size)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
 
     descriptors = torch.reshape(descriptors, [B, -1, Hc, Wc, 1, 1])
-    descriptors = F.normalize(descriptors, p=2, dim=1)
 
     warped_descriptors = torch.reshape(warped_descriptors, [B, -1, 1, 1, Hc, Wc])
-    warped_descriptors = F.normalize(warped_descriptors, p=2, dim=1)
 
-    desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
-
-    desc_dot = F.relu(desc_dot)
-
-    desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc, Wc, Hc * Wc]),
+    if normalise_descriptors:
+        descriptors = F.normalize(descriptors, p=2, dim=1)
+        warped_descriptors = F.normalize(warped_descriptors, p=2, dim=1)
+        desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
+        desc_dot = F.relu(desc_dot)
+        desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc, Wc, Hc * Wc]),
                                                  p=2,
                                                  dim=3), [B, Hc, Wc, Hc, Wc])
     
-    desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc * Wc, Hc, Wc]),
+        desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc * Wc, Hc, Wc]),
                                                  p=2,
                                                  dim=1), [B, Hc, Wc, Hc, Wc])
+
+    else:
+        desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
+
+
     
     positive_margin = torch.maximum(torch.tensor(0.,device=device), positive_margin - desc_dot)
     negative_margin = torch.maximum(torch.tensor(0.,device=device), desc_dot - negative_margin)
@@ -97,13 +108,20 @@ def descriptor_loss(config,descriptors,warped_descriptors,homographies,valid_mas
 
 
 
-def descriptor_loss_NeRF(config, data, descriptors, warped_descriptors, valid_mask, include_mask=False, device="cpu"):
+def descriptor_loss_NeRF(config,
+                         data,
+                         descriptors,
+                         warped_descriptors,
+                         valid_mask,
+                         include_mask=False, 
+                         device="cpu"):
 
     grid_size = config["descriptor_head"]["grid_size"]
     lambda_d = config["descriptor_head"]["lambda_d"]
     lambda_loss = config["descriptor_head"]["lambda_loss"]
     positive_margin = config["descriptor_head"]["positive_margin"]
     negative_margin = config["descriptor_head"]["negative_margin"]
+    normalise_descriptors = config["descriptor_head"]["normalise_descriptors"]
 
     B, C, Hc, Wc = descriptors.shape
     
@@ -123,26 +141,30 @@ def descriptor_loss_NeRF(config, data, descriptors, warped_descriptors, valid_ma
     warped_coord_cells = torch.reshape(warped_coord_cells, [B, Hc, Wc, 1, 1, 2]) # (B,H,W,1,1,2)
 
     cell_distances = torch.linalg.vector_norm(coord_cells - warped_coord_cells, ord=2, dim=-1) # (B,H,W,H,W)
-    s = (cell_distances<=(grid_size-0.5)).to(torch.float32) # (B,H,W,H,W)
+    s = (cell_distances<=(grid_size)).to(torch.float32) # (B,H,W,H,W)
 
     descriptors = torch.reshape(descriptors, [B, -1, Hc, Wc, 1, 1])
-    descriptors = F.normalize(descriptors, p=2, dim=1)
 
     warped_descriptors = torch.reshape(warped_descriptors, [B, -1, 1, 1, Hc, Wc])
-    warped_descriptors = F.normalize(warped_descriptors, p=2, dim=1)
-
-    desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
-
-    desc_dot = F.relu(desc_dot)
-
-    desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc, Wc, Hc * Wc]),
-                                                 p=2,
-                                                 dim=3), [B, Hc, Wc, Hc, Wc])
     
-    desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc * Wc, Hc, Wc]),
-                                                 p=2,
-                                                 dim=1), [B, Hc, Wc, Hc, Wc])
-    
+    if normalise_descriptors:
+        descriptors = F.normalize(descriptors, p=2, dim=1)
+        warped_descriptors = F.normalize(warped_descriptors, p=2, dim=1)
+        desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
+        desc_dot = F.relu(desc_dot)
+        
+        desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc, Wc, Hc * Wc]),
+                                                    p=2,
+                                                    dim=3), [B, Hc, Wc, Hc, Wc])
+
+        desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc * Wc, Hc, Wc]),
+                                                    p=2,
+                                                    dim=1), [B, Hc, Wc, Hc, Wc])
+
+    else:
+        desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
+
+
     positive_margin = torch.maximum(torch.tensor(0.,device=device), positive_margin - desc_dot)
     negative_margin = torch.maximum(torch.tensor(0.,device=device), desc_dot - negative_margin)
 

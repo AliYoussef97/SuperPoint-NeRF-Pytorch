@@ -1,8 +1,8 @@
 data:
     name: 'HPatches'
     class_name: 'HPatches'
-    experiment_name: 'magicpoint_syn_i_repeatability_nms_4'
-    alteration: 'i' #or 'v' 
+    experiment_name: 'magicpoint_syn_v_repeatability_nms_4'
+    alteration: 'v' #or 'i' 
     batch_size: 1
     preprocessing:
         resize: [240,320] 

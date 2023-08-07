@@ -35,10 +35,10 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
             
             output = model(batch["raw"]["image"])
 
-            det_loss = detector_loss(output["detector_output"]["logits"],
-                                     batch["raw"]["kpts_heatmap"],
-                                     batch["raw"]["valid_mask"],
-                                     config["model"]["detector_head"]["grid_size"],
+            det_loss = detector_loss(logits= output["detector_output"]["logits"],
+                                     kpts_heatmap= batch["raw"]["kpts_heatmap"],
+                                     valid_mask= batch["raw"]["valid_mask"],
+                                     grid_size= config["model"]["detector_head"]["grid_size"],
                                      include_mask=mask_loss,
                                      device=device)
             
@@ -49,28 +49,28 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
 
                 warped_output = model(batch["warp"]["image"])
 
-                det_loss_warped = detector_loss(warped_output["detector_output"]["logits"],
-                                                batch["warp"]["kpts_heatmap"],
-                                                batch["warp"]["valid_mask"],
-                                                config["model"]["detector_head"]["grid_size"],
+                det_loss_warped = detector_loss(logits=warped_output["detector_output"]["logits"],
+                                                kpts_heatmap=batch["warp"]["kpts_heatmap"],
+                                                valid_mask=batch["warp"]["valid_mask"],
+                                                grid_size=config["model"]["detector_head"]["grid_size"],
                                                 include_mask=mask_loss,
                                                 device=device)
                 
                 if nerf_desc_loss:
-                    desc_loss = descriptor_loss_NeRF(config["model"],
-                                                     batch,
-                                                     output["descriptor_output"]["desc_raw"],
-                                                     warped_output["descriptor_output"]["desc_raw"],
-                                                     batch["warp"]["valid_mask"],
+                    desc_loss = descriptor_loss_NeRF(config=config["model"],
+                                                     data=batch,
+                                                     descriptors=output["descriptor_output"]["desc_raw"],
+                                                     warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
+                                                     valid_mask=batch["warp"]["valid_mask"],
                                                      include_mask=mask_loss,
                                                      device=device)
 
                 else:    
-                    desc_loss = descriptor_loss(config["model"],
-                                                output["descriptor_output"]["desc_raw"],
-                                                warped_output["descriptor_output"]["desc_raw"],
-                                                batch["homography"],
-                                                batch["warp"]["valid_mask"],
+                    desc_loss = descriptor_loss(config=config["model"],
+                                                descriptors=output["descriptor_output"]["desc_raw"],
+                                                warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
+                                                homographies=batch["homography"],
+                                                valid_mask=batch["warp"]["valid_mask"],
                                                 include_mask=mask_loss,
                                                 device=device)
                 
@@ -138,12 +138,12 @@ def validate(config, model, validation_loader, mask_loss, nerf_desc_loss , devic
         
         val_output = model(val_batch["raw"]["image"])
         
-        val_det_loss = detector_loss(val_output["detector_output"]["logits"],
-                                        val_batch["raw"]["kpts_heatmap"],
-                                        val_batch["raw"]["valid_mask"],
-                                        config["model"]["detector_head"]["grid_size"],
-                                        mask_loss,
-                                        device=device)
+        val_det_loss = detector_loss(logits=val_output["detector_output"]["logits"],
+                                     kpts_heatmap=val_batch["raw"]["kpts_heatmap"],
+                                     valid_mask=val_batch["raw"]["valid_mask"],
+                                     grid_size=config["model"]["detector_head"]["grid_size"],
+                                     include_mask=mask_loss,
+                                     device=device)
         
         val_loss = val_det_loss
         
@@ -151,30 +151,30 @@ def validate(config, model, validation_loader, mask_loss, nerf_desc_loss , devic
 
             val_warped_output = model(val_batch["warp"]["image"])
 
-            val_det_loss_warped = detector_loss(val_warped_output["detector_output"]["logits"],
-                                                val_batch["warp"]["kpts_heatmap"],
-                                                val_batch["warp"]["valid_mask"],
-                                                config["model"]["detector_head"]["grid_size"],
-                                                mask_loss,
+            val_det_loss_warped = detector_loss(logits=val_warped_output["detector_output"]["logits"],
+                                                kpts_heatmap=val_batch["warp"]["kpts_heatmap"],
+                                                valid_mask=val_batch["warp"]["valid_mask"],
+                                                grid_size=config["model"]["detector_head"]["grid_size"],
+                                                include_mask=mask_loss,
                                                 device=device)
             
             if nerf_desc_loss:
-                val_desc_loss = descriptor_loss_NeRF(config["model"],
-                                                     val_batch,
-                                                     val_output["descriptor_output"]["desc_raw"],
-                                                     val_warped_output["descriptor_output"]["desc_raw"],
-                                                     val_batch["warp"]["valid_mask"],
-                                                     mask_loss,
+                val_desc_loss = descriptor_loss_NeRF(config=config["model"],
+                                                     data=val_batch,
+                                                     descriptors=val_output["descriptor_output"]["desc_raw"],
+                                                     warped_descriptors=val_warped_output["descriptor_output"]["desc_raw"],
+                                                     valid_mask=val_batch["warp"]["valid_mask"],
+                                                     include_mask=mask_loss,
                                                      device=device)
 
 
             else:
-                val_desc_loss = descriptor_loss(config["model"],
-                                                val_output["descriptor_output"]["desc_raw"],
-                                                val_warped_output["descriptor_output"]["desc_raw"],
-                                                val_batch["homography"],
-                                                val_batch["warp"]["valid_mask"],
-                                                mask_loss,
+                val_desc_loss = descriptor_loss(config=config["model"],
+                                                descriptors=val_output["descriptor_output"]["desc_raw"],
+                                                warped_descriptors=val_warped_output["descriptor_output"]["desc_raw"],
+                                                homographies=val_batch["homography"],
+                                                valid_mask=val_batch["warp"]["valid_mask"],
+                                                include_mask=mask_loss,
                                                 device=device)
             
             val_loss += (val_det_loss_warped + val_desc_loss)

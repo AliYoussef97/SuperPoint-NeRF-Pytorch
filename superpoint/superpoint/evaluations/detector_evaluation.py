@@ -1,4 +1,4 @@
-# This code are from Superpoint[https://github.com/rpautrat/SuperPoint]
+# This code is from Superpoint[https://github.com/rpautrat/SuperPoint]
 
 import numpy as np
 from os import path as osp
@@ -7,12 +7,14 @@ from glob import glob
 from superpoint.settings import EXPER_PATH
 
 
-def get_paths(exper_name, repeatability=False):
+def get_paths(exper_name, repeatability=False,MP_det_eval=False):
     """
     Return a list of paths to the outputs of the experiment.
     """
     if repeatability:
         return glob(osp.join(EXPER_PATH, 'repeatability/{}/*.npz'.format(exper_name)))
+    elif MP_det_eval:
+        return glob(osp.join(EXPER_PATH, 'MP_det_eval/{}/*.npz'.format(exper_name)))
     else:
         return glob(osp.join(EXPER_PATH, 'outputs/{}/*.npz'.format(exper_name)))
 
@@ -73,7 +75,7 @@ def compute_pr(exper_name, **kwargs):
     Compute precision and recall.
     """
     # Gather TP and FP for all files
-    paths = get_paths(exper_name)
+    paths = get_paths(exper_name,MP_det_eval=True)
     tp, fp, prob, n_gt = [], [], [], 0
     for path in paths:
         t, f, p, n = compute_tp_fp(np.load(path), **kwargs)
@@ -132,7 +134,7 @@ def compute_loc_error(exper_name, prob_thresh=0.5, distance_thresh=2):
         dist = np.min(dist, axis=1)
         correct_dist = dist[np.less_equal(dist, distance_thresh)]
         return correct_dist
-    paths = get_paths(exper_name)
+    paths = get_paths(exper_name,MP_det_eval=True)
     error = []
     for path in paths:
         error.append(loc_error_per_image(np.load(path)))

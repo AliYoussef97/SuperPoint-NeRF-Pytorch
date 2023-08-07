@@ -19,6 +19,8 @@ class ExportDetections():
         self.dataloader = dataloader
         self.split = split
         self.enable_HA = enable_HA
+        if self.enable_HA:
+            print(f'\033[92m✅ Homography Adaptation enabled \033[0m')
         self.device = device
         self.output_dir = self._init_output_dir()
         self.one_homography = Homographic_aug(config['homography_adaptation'],self.device)
