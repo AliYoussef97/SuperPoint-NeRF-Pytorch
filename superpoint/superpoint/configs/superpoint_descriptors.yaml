@@ -20,4 +20,4 @@ model:
     descriptor_head:
         descriptor_dim: [128,256]
         grid_size: 8
-pretraiend: 'superpoint_v1\superpoint_v1.pth' #Reapeatability for baseline model.
+pretraiend: 'superpoint_v1\superpoint_v1_600000.pth' #Reapeatability for baseline model.
