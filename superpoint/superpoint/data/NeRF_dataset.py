@@ -26,7 +26,7 @@ class NeRF(Dataset):
         """
         List of images' path and names to be processed.
         """
-        data_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\images\\{self.action}")
+        data_dir = Path(f"{DATA_PATH}\\{self.config['data_dir']}\\images\\{self.action}")
         image_paths = list(data_dir.iterdir())
         if self.config["truncate"]:
             image_paths = image_paths[:self.config["truncate"]]
