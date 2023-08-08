@@ -1,0 +1,52 @@
+data:
+    name: 'NeRF_dataset'
+    class_name: 'NeRF'
+    all_data_dirs: ['Room','Art','Desk','Coffin','Fortress','Paintings','Wood']
+    data_dir: ''
+    image_size: [480, 640]
+    fov: 44
+    batch_size: 2
+    truncate: False
+    all_labels_dirs: ['outputs\coco_export_v1_NeRF_Room',
+                      'outputs\coco_export_v1_NeRF_Art',
+                      'outputs\coco_export_v1_NeRF_Desk',
+                      'outputs\coco_export_v1_NeRF_Coffin',
+                      'outputs\coco_export_v1_NeRF_Fortress',
+                      'outputs\coco_export_v1_NeRF_Paintings',
+                      'outputs\coco_export_v1_NeRF_Wood']
+    has_labels: ''
+    warped_pair: True
+    augmentation:
+        photometric:
+            enable: True
+            primitives: [
+                'random_brightness', 'random_contrast', 'additive_speckle_noise',
+                'additive_gaussian_noise', 'additive_shade', 'motion_blur' ]
+            params:
+                random_brightness: {max_abs_change: 75}
+                random_contrast: {strength_range: [0.3, 1.8]}
+                additive_gaussian_noise: {stddev_range: [0, 15]}
+                additive_speckle_noise: {prob_range: [0, 0.0035]}
+                additive_shade:
+                    transparency_range: [-0.5, 0.8]
+                    kernel_size_range: [50, 100]
+                    nb_ellipses: 20
+                motion_blur: {max_kernel_size: 7}
+model:
+    script: 'SuperPoint'
+    class_name: 'SuperPoint'
+    model_name: 'magicpoint'
+    vgg_cn: [64,64,64,64,128,128,128,128]
+    detector_head: 
+        detector_dim: [128,256]
+        grid_size: 8
+        nms: 4
+        det_thresh: 0.001
+        top_k: 0
+train:
+    num_iters: 50000
+    learning_rate: 0.001
+save_or_validation_interval: 1000
+ckpt_name: 'magicpoint_NeRF_v1_no_HA'
+pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
+continue_training: False
