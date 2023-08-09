@@ -62,13 +62,15 @@ def descriptor_loss(config,
     warped_coord_cells = torch.reshape(warped_coord_cells, [B, Hc, Wc, 1, 1, 2]) # (B,Hc,Wc,1,1,2)
 
     cell_distances = torch.linalg.vector_norm(coord_cells - warped_coord_cells, ord=2, dim=-1) # (B,Hc,Wc,Hc,Wc)
-    s = (cell_distances<=(grid_size)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
 
     descriptors = torch.reshape(descriptors, [B, -1, Hc, Wc, 1, 1])
 
     warped_descriptors = torch.reshape(warped_descriptors, [B, -1, 1, 1, Hc, Wc])
 
     if normalise_descriptors:
+
+        s = (cell_distances<=(grid_size-0.5)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
+
         descriptors = F.normalize(descriptors, p=2, dim=1)
         warped_descriptors = F.normalize(warped_descriptors, p=2, dim=1)
         desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
@@ -82,6 +84,8 @@ def descriptor_loss(config,
                                                  dim=1), [B, Hc, Wc, Hc, Wc])
 
     else:
+        s = (cell_distances<=(grid_size)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
+
         desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
 
 
@@ -141,13 +145,14 @@ def descriptor_loss_NeRF(config,
     warped_coord_cells = torch.reshape(warped_coord_cells, [B, Hc, Wc, 1, 1, 2]) # (B,H,W,1,1,2)
 
     cell_distances = torch.linalg.vector_norm(coord_cells - warped_coord_cells, ord=2, dim=-1) # (B,H,W,H,W)
-    s = (cell_distances<=(grid_size)).to(torch.float32) # (B,H,W,H,W)
 
     descriptors = torch.reshape(descriptors, [B, -1, Hc, Wc, 1, 1])
 
     warped_descriptors = torch.reshape(warped_descriptors, [B, -1, 1, 1, Hc, Wc])
     
     if normalise_descriptors:
+        s = (cell_distances<=(grid_size-0.5)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
+
         descriptors = F.normalize(descriptors, p=2, dim=1)
         warped_descriptors = F.normalize(warped_descriptors, p=2, dim=1)
         desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
@@ -162,6 +167,8 @@ def descriptor_loss_NeRF(config,
                                                     dim=1), [B, Hc, Wc, Hc, Wc])
 
     else:
+        s = (cell_distances<=(grid_size)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
+
         desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
 
 

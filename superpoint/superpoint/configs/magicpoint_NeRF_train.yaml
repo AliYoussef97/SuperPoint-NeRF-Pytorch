@@ -7,13 +7,13 @@ data:
     fov: 44
     batch_size: 2
     truncate: False
-    all_labels_dirs: ['outputs\coco_export_v1_NeRF_Room',
-                      'outputs\coco_export_v1_NeRF_Art',
-                      'outputs\coco_export_v1_NeRF_Desk',
-                      'outputs\coco_export_v1_NeRF_Coffin',
-                      'outputs\coco_export_v1_NeRF_Fortress',
-                      'outputs\coco_export_v1_NeRF_Paintings',
-                      'outputs\coco_export_v1_NeRF_Wood']
+    all_labels_dirs: ['outputs\NeRF_export_v1\Room',
+                      'outputs\NeRF_export_v1\Art',
+                      'outputs\NeRF_export_v1\Desk',
+                      'outputs\NeRF_export_v1\Coffin',
+                      'outputs\NeRF_export_v1\Fortress',
+                      'outputs\NeRF_export_v1\Paintings',
+                      'outputs\NeRF_export_v1\Wood']
     has_labels: ''
     warped_pair: True
     augmentation:

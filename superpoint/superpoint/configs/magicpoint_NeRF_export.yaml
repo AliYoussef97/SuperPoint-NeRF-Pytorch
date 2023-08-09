@@ -1,0 +1,43 @@
+data:
+    name: 'NeRF_dataset'
+    class_name: 'NeRF'
+    experiment_name: 'NeRF_export_v1\Desk'
+    preprocessing:
+        resize: [240, 320] 
+    has_labels: False
+    warped_pair: False
+    augmentation:
+        photometric:
+            enable: False
+        homographic:
+            enable: False
+    batch_size: 1
+    truncate: False
+homography_adaptation:
+    num: 0
+    aggregation: 'sum'
+    filter_counts: 0
+    valid_border_margin: 3
+    params:
+        translation: true
+        rotation: true
+        scaling: true
+        perspective: true
+        scaling_amplitude: 0.2
+        perspective_amplitude_x: 0.2
+        perspective_amplitude_y: 0.2
+        allow_artifacts: true
+        patch_ratio: 0.85
+        max_angle: 1.57
+model:
+    script: 'SuperPoint'
+    class_name: 'SuperPoint'
+    model_name: 'magicpoint'
+    vgg_cn: [64,64,64,64,128,128,128,128]
+    detector_head: 
+        detector_dim: [128,256]
+        grid_size: 8
+        nms: 4
+        det_thresh: 0.015
+        top_k: 0
+pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'

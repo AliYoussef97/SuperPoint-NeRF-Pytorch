@@ -2,12 +2,18 @@ from tqdm import tqdm
 import torch
 import numpy as np
 from pathlib import Path
+from itertools import cycle
 from superpoint.utils.losses import detector_loss, descriptor_loss, descriptor_loss_NeRF
 from superpoint.utils.metrics import metrics
 from superpoint.settings import CKPT_PATH
 from torch.utils.tensorboard import SummaryWriter
 
-def train_val(config, model, train_loader, validation_loader=None, mask_loss=False, iteration=0, nerf_desc_loss=False, device="cpu"):
+def train_val(config, model, 
+              train_loader, validation_loader=None,
+              mask_loss=False, iteration=0,
+              nerf_desc_loss=False, nerf_train=False, 
+              device="cpu"):
+    
     print(f'\033[92m🚀 Training started for {config["model"]["model_name"].upper()} model on {config["data"]["class_name"]}\033[0m')
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
@@ -29,8 +35,19 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
     Train = True
 
     model.train()
+
+    if nerf_train:
+        training_dataloaders = cycle(train_loader)
+        if validation_loader is not None:
+            validation_dataloaders = cycle(validation_loader)
     
     while Train: 
+
+        if nerf_train:
+            train_loader = next(training_dataloaders)    
+            if validation_loader is not None:
+                validation_loader = next(validation_dataloaders)
+
         for batch in train_loader:
             
             output = model(batch["raw"]["image"])
@@ -58,12 +75,12 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                 
                 if nerf_desc_loss:
                     desc_loss = descriptor_loss_NeRF(config=config["model"],
-                                                     data=batch,
-                                                     descriptors=output["descriptor_output"]["desc_raw"],
-                                                     warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
-                                                     valid_mask=batch["warp"]["valid_mask"],
-                                                     include_mask=mask_loss,
-                                                     device=device)
+                                                    data=batch,
+                                                    descriptors=output["descriptor_output"]["desc_raw"],
+                                                    warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
+                                                    valid_mask=batch["warp"]["valid_mask"],
+                                                    include_mask=mask_loss,
+                                                    device=device)
 
                 else:    
                     desc_loss = descriptor_loss(config=config["model"],
@@ -102,11 +119,11 @@ def train_val(config, model, train_loader, validation_loader=None, mask_loss=Fal
                     writer.add_scalar("Recall", recall, iter)
                     
                     tqdm.write('Iteration: {}, Running Training loss: {:.4f}, Running Validation loss: {:.4f}, Precision: {:.4f}, Recall: {:.4f}'
-                           .format(iter, running_loss, running_val_loss, precision, recall))
+                               .format(iter, running_loss, running_val_loss, precision, recall))
                 
                 else:
                     tqdm.write('Iteration: {}, Running Training loss: {:.4f}'
-                           .format(iter, running_loss))
+                               .format(iter, running_loss))
 
                 torch.save({"iteration":iter,
                             "model_state_dict":model.state_dict()},

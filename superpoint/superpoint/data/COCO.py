@@ -109,7 +109,7 @@ class COCO(Dataset):
         if self.config["warped_pair"]:
             assert self.config["has_labels"], "Only for SuperPoint, not MagicPoint."
 
-            warped = self.homographic_aug(data["raw"]["image"].view(1,1,H,W),data["raw_kpts"])
+            warped = self.homographic_aug(data["raw"]["image"].view(1,1,H,W),data["raw"]["kpts"])
             data["warp"] = warped["warp"]
             data["homography"] = warped["homography"]
             

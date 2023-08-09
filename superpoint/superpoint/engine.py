@@ -18,10 +18,12 @@ class options:
         validate_training: Validate during training.
         include_mask_loss: Apply mask or no mask during loss (Do not include bordering artifacts by applying mask).
         nerf_loss: Whether to use Descriptor NeRF loss or normal SuperPoint Descriptor loss.
+        train_nerf: Whether to enable training of NeRF datasets (Multiple datasets can be used for training)
     """
     validate_training: bool = False
     include_mask_loss: bool = True
     nerf_loss: bool = False
+    train_nerf: bool = False
 
 
 @dataclass
@@ -64,10 +66,13 @@ class main():
 
             self.model = get_model(self.config["model"], device=self.device)
             
-            self.dataloader = get_loader(self.config, task, device=self.device, validate_training=training.validate_training)
+            self.dataloader = get_loader(self.config, task, 
+                                         device=self.device, validate_training=training.validate_training, 
+                                         nerf_train=training.train_nerf)
 
             self.mask_loss = training.include_mask_loss
             self.nerf_loss = training.nerf_loss
+            self.nerf_train = training.train_nerf
 
             if self.config["pretraiend"]:
                 
@@ -148,9 +153,10 @@ class main():
             iteration = 0
         
         train_val(self.config, self.model, 
-                  self.dataloader["train"], self.dataloader["validation"], 
-                  self.mask_loss, iteration,
-                  self.nerf_loss, self.device)
+                self.dataloader["train"], self.dataloader["validation"], 
+                self.mask_loss, iteration,
+                self.nerf_loss, self.nerf_train,
+                self.device)
     
 
     def export_pseudo_labels(self):
