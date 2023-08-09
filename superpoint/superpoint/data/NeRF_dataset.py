@@ -29,7 +29,7 @@ class NeRF(Dataset):
         data_dir = Path(f"{DATA_PATH}\\{self.config['data_dir']}\\images\\{self.action}")
         image_paths = list(data_dir.iterdir())
         if self.config["truncate"]:
-            image_paths = image_paths[:self.config["truncate"]]
+            image_paths = image_paths[:int(self.config["truncate"]*len(image_paths))]
         names = [p.stem for p in image_paths]
         image_paths = [str(p) for p in image_paths]
         files = {"image_paths":image_paths, "names":names}
