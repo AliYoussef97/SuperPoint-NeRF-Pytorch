@@ -58,6 +58,7 @@ def train_val(config, model,
                                      grid_size= config["model"]["detector_head"]["grid_size"],
                                      include_mask=mask_loss,
                                      device=device)
+            writer.add_scalar("Detector loss", det_loss, iter)
             
             loss = det_loss
             
@@ -72,24 +73,29 @@ def train_val(config, model,
                                                 grid_size=config["model"]["detector_head"]["grid_size"],
                                                 include_mask=mask_loss,
                                                 device=device)
+                writer.add_scalar("Warped Detector loss", det_loss_warped, iter)
                 
                 if nerf_desc_loss:
-                    desc_loss = descriptor_loss_NeRF(config=config["model"],
-                                                    data=batch,
-                                                    descriptors=output["descriptor_output"]["desc_raw"],
-                                                    warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
-                                                    valid_mask=batch["warp"]["valid_mask"],
-                                                    include_mask=mask_loss,
-                                                    device=device)
+                    desc_loss, positive_dist, negative_dist = descriptor_loss_NeRF(config=config["model"],
+                                                                                   data=batch,
+                                                                                   descriptors=output["descriptor_output"]["desc_raw"],
+                                                                                   warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
+                                                                                   valid_mask=batch["warp"]["valid_mask"],
+                                                                                   include_mask=mask_loss,
+                                                                                   device=device)
 
                 else:    
-                    desc_loss = descriptor_loss(config=config["model"],
-                                                descriptors=output["descriptor_output"]["desc_raw"],
-                                                warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
-                                                homographies=batch["homography"],
-                                                valid_mask=batch["warp"]["valid_mask"],
-                                                include_mask=mask_loss,
-                                                device=device)
+                    desc_loss, positive_dist, negative_dist = descriptor_loss(config=config["model"],
+                                                                              descriptors=output["descriptor_output"]["desc_raw"],
+                                                                              warped_descriptors=warped_output["descriptor_output"]["desc_raw"],
+                                                                              homographies=batch["homography"],
+                                                                              valid_mask=batch["warp"]["valid_mask"],
+                                                                              include_mask=mask_loss,
+                                                                              device=device)
+                
+                writer.add_scalar("Descriptor loss", desc_loss, iter)
+                writer.add_scalar("Positive Distribution", positive_dist, iter)
+                writer.add_scalar("Negative Distribution", negative_dist, iter)
                 
                 loss += (det_loss_warped + desc_loss)
 

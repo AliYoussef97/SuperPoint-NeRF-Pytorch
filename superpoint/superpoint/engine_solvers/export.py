@@ -192,7 +192,7 @@ class Export_Hpatches_Descriptors():
         
         for i, data in enumerate(tqdm(self.dataloader, desc=f"Exporting HPatches descriptors", colour="green")):
 
-            output_1 = self.model(data["image"]) 
+            output_1 = self.model(data["image"])
             prob1 = output_1["detector_output"]["prob_heatmap_nms"]
             desc1 = output_1["descriptor_output"]["desc"] 
 

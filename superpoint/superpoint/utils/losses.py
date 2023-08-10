@@ -90,10 +90,10 @@ def descriptor_loss(config,
 
 
     
-    positive_margin = torch.maximum(torch.tensor(0.,device=device), positive_margin - desc_dot)
-    negative_margin = torch.maximum(torch.tensor(0.,device=device), desc_dot - negative_margin)
+    positive_dist = torch.maximum(torch.tensor(0.,device=device), positive_margin - desc_dot)
+    negative_dist = torch.maximum(torch.tensor(0.,device=device), desc_dot - negative_margin)
 
-    desc_loss = lambda_d * s * positive_margin + (1 - s) * negative_margin
+    desc_loss = lambda_d * s * positive_dist + (1 - s) * negative_dist
 
 
     valid_mask = torch.ones([B, Hc*grid_size, Wc*grid_size],
@@ -108,7 +108,10 @@ def descriptor_loss(config,
 
     desc_loss = lambda_loss*torch.sum(valid_mask * desc_loss)/normalization
 
-    return desc_loss
+    summary_writer_postive_dist = torch.sum(valid_mask * lambda_d * s *positive_dist)/normalization
+    summary_writer_negative_dist = torch.sum(valid_mask * (1-s) * negative_dist)/normalization
+
+    return desc_loss, summary_writer_postive_dist, summary_writer_negative_dist
 
 
 
@@ -172,10 +175,10 @@ def descriptor_loss_NeRF(config,
         desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
 
 
-    positive_margin = torch.maximum(torch.tensor(0.,device=device), positive_margin - desc_dot)
-    negative_margin = torch.maximum(torch.tensor(0.,device=device), desc_dot - negative_margin)
+    positive_dist = torch.maximum(torch.tensor(0.,device=device), positive_margin - desc_dot)
+    negative_dist = torch.maximum(torch.tensor(0.,device=device), desc_dot - negative_margin)
 
-    desc_loss = lambda_d * s * positive_margin + (1 - s) * negative_margin
+    desc_loss = lambda_d * s * positive_dist + (1 - s) * negative_dist
 
 
     valid_mask = torch.ones([B, Hc*grid_size, Wc*grid_size],
@@ -190,4 +193,7 @@ def descriptor_loss_NeRF(config,
 
     desc_loss = lambda_loss*torch.sum(valid_mask * desc_loss)/normalization
 
-    return desc_loss
+    summary_writer_postive_dist = torch.sum(valid_mask * lambda_d * s * positive_dist)/normalization
+    summary_writer_negative_dist = torch.sum(valid_mask * (1-s) * negative_dist)/normalization
+
+    return desc_loss, summary_writer_postive_dist, summary_writer_negative_dist

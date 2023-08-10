@@ -141,6 +141,7 @@ def compute_loc_error(exper_name, prob_thresh=0.5, distance_thresh=2):
     return np.mean(np.concatenate(error))
 
 
+
 def compute_repeatability(exper_name, keep_k_points=300,
                           distance_thresh=3, verbose=False):
     """
