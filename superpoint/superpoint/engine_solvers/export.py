@@ -204,8 +204,8 @@ class Export_Hpatches_Descriptors():
                       "warped_image": data["warped_image"].squeeze().cpu().numpy(),
                       "prob": prob1.squeeze().cpu().numpy(),
                       "warped_prob": prob2.squeeze().cpu().numpy(),
-                      "desc": desc1.squeeze().cpu().numpy(),
-                      "warped_desc": desc2.squeeze().cpu().numpy(),
+                      "desc": desc1.squeeze().cpu().numpy().transpose(1,2,0),
+                      "warped_desc": desc2.squeeze().cpu().numpy().transpose(1,2,0),
                       "homography": data["homography"].squeeze().cpu().numpy()}
 
             filename = data['name'][0] if 'name' in data else str(i)
