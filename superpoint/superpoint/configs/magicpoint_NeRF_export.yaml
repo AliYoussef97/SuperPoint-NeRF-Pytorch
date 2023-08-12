@@ -1,15 +1,14 @@
 data:
     name: 'NeRF_dataset'
     class_name: 'NeRF'
-    experiment_name: 'NeRF_export_v1\Desk'
-    preprocessing:
-        resize: [240, 320] 
+    data_dir: 'Paintings'
+    experiment_name: 'NeRF_SP_export\Paintings' #'coco_export_v1_HA'
+    image_size: [480, 640]
+    fov: 44
     has_labels: False
     warped_pair: False
     augmentation:
         photometric:
-            enable: False
-        homographic:
             enable: False
     batch_size: 1
     truncate: False
@@ -40,4 +39,4 @@ model:
         nms: 4
         det_thresh: 0.015
         top_k: 0
-pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
+pretraiend: 'magicpoint_COCO_v2_HA\magicpoint_COCO_v2_HA_20000.pth' #'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'

@@ -1,7 +1,7 @@
 data:
     name: 'HPatches'
     class_name: 'HPatches'
-    experiment_name: 'superpoint_descriptors_nms_4'
+    experiment_name: 'superpoint_descriptors_all_nms_4'
     alteration: 'all' #or 'i' 'v' 
     batch_size: 1
     preprocessing:

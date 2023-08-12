@@ -26,7 +26,7 @@ class NeRF(Dataset):
         """
         List of images' path and names to be processed.
         """
-        data_dir = Path(f"{DATA_PATH}\\{self.config['data_dir']}\\images\\{self.action}")
+        data_dir = Path(f"{DATA_PATH}\\NeRF\\{self.config['data_dir']}\\images\\{self.action}")
         image_paths = list(data_dir.iterdir())
         if self.config["truncate"]:
             image_paths = image_paths[:int(self.config["truncate"]*len(image_paths))]
@@ -37,13 +37,13 @@ class NeRF(Dataset):
         if self.config["has_labels"]:
 
             # Camera transformation
-            camera_transform_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\camera_transforms\\{self.action}")
+            camera_transform_dir = Path(f"{DATA_PATH}\\NeRF\\{self.config['data_dir']}\\camera_transforms\\{self.action}")
             camera_transform_paths = list(camera_transform_dir.iterdir())
             camera_transform_paths = [str(p) for p in camera_transform_paths]
             files["camera_transform_paths"] = camera_transform_paths
 
             # Depth paths
-            depth_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\depth\\{self.action}")
+            depth_dir = Path(f"{DATA_PATH}\\NeRF\\{self.config['data_dir']}\\depth\\{self.action}")
             depth_paths = list(depth_dir.iterdir())
             depth_paths = [str(p) for p in depth_paths]
             files["depth_paths"] = depth_paths
@@ -218,7 +218,7 @@ class NeRF(Dataset):
         return data
     
 
-    def batch_collater(self, batch):
+    def batch_collator(self, batch):
 
         
         images = torch.stack([item['raw']['image'].unsqueeze(0) for item in batch]) # size=(batch_size,1,H,W)
