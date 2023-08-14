@@ -10,11 +10,11 @@ class VGG_Block(nn.Module):
 
         self.conv2d = nn.Conv2d(input_dim, output_dim, kernel_size=kn_size, stride=1, padding=pad)
         
-        if activation:
-            self.relu = nn.ReLU(inplace=True)
-        
         if batch_norm:
             self.norm = nn.BatchNorm2d(output_dim)
+        
+        if activation:
+            self.relu = nn.ReLU(inplace=True)
         
         if maxpool:
             self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -24,11 +24,11 @@ class VGG_Block(nn.Module):
 
         x = self.conv2d(x)
         
-        if self.activation:
-            x = self.relu(x)
-        
         if self.batch_norm:
             x = self.norm(x)
+        
+        if self.activation:
+            x = self.relu(x)
         
         if self.maxpool:
             x = self.maxpool(x) 
