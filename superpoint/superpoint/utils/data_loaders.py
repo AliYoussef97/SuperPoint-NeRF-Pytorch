@@ -18,8 +18,9 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
             data_loader = {"train": DataLoader(dataset["train"], 
                                             batch_size=batch_size,
                                             collate_fn=dataset["train"].batch_collator, 
-                                            shuffle=True, 
-                                            num_workers=0),
+                                            shuffle=True,
+                                            pin_memory=True, 
+                                            num_workers=4),
                             "validation":None}
             if validate_training: 
 
@@ -29,6 +30,7 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                                     batch_size=batch_size,
                                                     collate_fn=dataset["validation"].batch_collator,
                                                     shuffle=False,
+                                                    pin_memory=True,
                                                     num_workers=0)
         else:
 
@@ -44,8 +46,9 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                 data_loader["train"].append(DataLoader(dataset["train"], 
                                             batch_size=batch_size,
                                             collate_fn=dataset["train"].batch_collator, 
-                                            shuffle=True, 
-                                            num_workers=0))
+                                            shuffle=True,
+                                            pin_memory=True, 
+                                            num_workers=4))
           
             if validate_training:
                 
@@ -62,6 +65,7 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                                     batch_size=batch_size,
                                                     collate_fn=dataset["validation"].batch_collator,
                                                     shuffle=False,
+                                                    pin_memory=True,
                                                     num_workers=0))
 
         
@@ -72,6 +76,7 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                           batch_size=batch_size,
                                           collate_fn=dataset["test"].batch_collator,
                                           shuffle=False,
+                                          pin_memory=True,
                                           num_workers=0)}
         
     if task == "export_pseudo_labels":
@@ -80,7 +85,8 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                  batch_size=batch_size,
                                  collate_fn=dataset.batch_collator,
                                  shuffle=False,
-                                 num_workers=0)
+                                 pin_memory=True,
+                                 num_workers=4)
     
 
     if task == "export_HPatches_Repeatability" or task == "export_HPatches_Descriptors":
@@ -89,7 +95,8 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                  batch_size=batch_size,
                                  collate_fn=dataset.batch_collator,
                                  shuffle=False,
-                                 num_workers=0)
+                                 pin_memory=True,
+                                 num_workers=4)
         
     
     return data_loader

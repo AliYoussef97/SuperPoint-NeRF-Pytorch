@@ -65,5 +65,5 @@ train:
     learning_rate: 0.001
 save_or_validation_interval: 10000
 ckpt_name: 'Superpoint_Baseline'
-pretraiend: 'magicpoint_COCO_v2_HA\magicpoint_COCO_v2_HA_20000.pth'
+pretrained: 'magicpoint_COCO_v2_HA\magicpoint_COCO_v2_HA_20000.pth'
 continue_training: False

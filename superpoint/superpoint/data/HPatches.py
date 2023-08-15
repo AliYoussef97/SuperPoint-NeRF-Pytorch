@@ -20,7 +20,7 @@ class HPatches(Dataset):
 
     def _init_dataset(self):
 
-        data_dir = Path(f"{DATA_PATH}\\{self.config['name']}")
+        data_dir = Path(DATA_PATH, self.config["name"])
         folder_dirs = [x for x in data_dir.iterdir() if x.is_dir()]
 
         image_paths = []

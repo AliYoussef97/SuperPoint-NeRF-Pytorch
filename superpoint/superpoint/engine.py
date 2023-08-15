@@ -1,6 +1,7 @@
 import tyro
 import yaml
 import torch
+from pathlib import Path
 from typing import Literal
 from dataclasses import dataclass 
 from superpoint.settings import CKPT_PATH
@@ -67,18 +68,18 @@ class main():
             self.model = get_model(self.config["model"], device=self.device)
             
             self.dataloader = get_loader(self.config, task, 
-                                         device=self.device, validate_training=training.validate_training, 
+                                         device="cpu", validate_training=training.validate_training, 
                                          nerf_train=training.train_nerf)
 
             self.mask_loss = training.include_mask_loss
             self.nerf_loss = training.nerf_loss
             self.nerf_train = training.train_nerf
 
-            if self.config["pretraiend"]:
+            if self.config["pretrained"]:
                 
                 model_state_dict =  self.model.state_dict()
                 
-                pretrained_dict = torch.load(f'{CKPT_PATH}\{self.config["pretraiend"]}', map_location=self.device)
+                pretrained_dict = torch.load(Path(CKPT_PATH,self.config["pretrained"]), map_location=self.device)
                 pretrained_state = pretrained_dict["model_state_dict"]
                 
                 for k,v in pretrained_state.items():
@@ -99,13 +100,13 @@ class main():
             self.enable_Homography_Adaptation = pseudo_labels.enable_Homography_Adaptation
 
             self.model = get_model(self.config["model"], device=self.device)
-            self.dataloader = get_loader(self.config, task, device=self.device, export_split=self.pseudo_split)
+            self.dataloader = get_loader(self.config, task, device="cpu", export_split=self.pseudo_split)
 
-            assert self.config["pretraiend"], "Use pretrained model to export pseudo labels."
+            assert self.config["pretrained"], "Use pretrained model to export pseudo labels."
             
             model_state_dict =  self.model.state_dict()
             
-            pretrained_dict = torch.load(f'{CKPT_PATH}\{self.config["pretraiend"]}', map_location=self.device)
+            pretrained_dict = torch.load(Path(CKPT_PATH,self.config["pretrained"]), map_location=self.device)
             pretrained_state = pretrained_dict["model_state_dict"]
 
             for k,v in pretrained_state.items():
@@ -122,13 +123,13 @@ class main():
         if task == "export_HPatches_Repeatability" or task == "export_HPatches_Descriptors":
 
             self.model = get_model(self.config["model"], device=self.device)
-            self.dataloader = get_loader(self.config, task, device=self.device)
+            self.dataloader = get_loader(self.config, task, device="cpu")
 
-            assert self.config["pretraiend"], "Use pretrained model to export HPatches reliability."
+            assert self.config["pretrained"], "Use pretrained model to export HPatches reliability."
 
             model_state_dict =  self.model.state_dict()
 
-            pretrained_dict = torch.load(f'{CKPT_PATH}\{self.config["pretraiend"]}', map_location=self.device)
+            pretrained_dict = torch.load(Path(CKPT_PATH,self.config["pretrained"]), map_location=self.device)
             pretrained_state = pretrained_dict["model_state_dict"]
 
             for k,v in pretrained_state.items():

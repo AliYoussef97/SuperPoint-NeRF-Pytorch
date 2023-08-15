@@ -17,4 +17,4 @@ model:
         nms: 4
         det_thresh: 0.001
         top_k: 1000
-pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth' #Reapeatability for baseline model.
+pretrained: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth' #Reapeatability for baseline model.

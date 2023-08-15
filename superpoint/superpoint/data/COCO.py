@@ -34,7 +34,7 @@ class COCO(Dataset):
         """
         List of images' path and names to be processed.
         """
-        data_dir = Path(f"{DATA_PATH}\\{self.config['name']}\\images\\{self.action}")
+        data_dir = Path(DATA_PATH, self.config["name"], "images", self.action)
         image_paths = list(data_dir.iterdir())
         if self.config["truncate"]:
             image_paths = image_paths[:int(self.config["truncate"]*len(image_paths))]
@@ -44,7 +44,7 @@ class COCO(Dataset):
 
         if self.config["has_labels"]:
 
-            label_dir = Path(f"{EXPER_PATH}\\{self.config['has_labels']}\\{self.action}")
+            label_dir = Path(EXPER_PATH, self.config["has_labels"], self.action)
             label_paths = []
             for n in files["names"]:
                 p = Path(label_dir,'{}.npy'.format(n))

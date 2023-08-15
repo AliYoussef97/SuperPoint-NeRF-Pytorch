@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from pathlib import Path
 from itertools import cycle
+from superpoint.utils.train_utils import move_to_device
 from superpoint.utils.losses import detector_loss, descriptor_loss, descriptor_loss_NeRF
 from superpoint.utils.metrics import metrics
 from superpoint.settings import CKPT_PATH
@@ -22,7 +23,7 @@ def train_val(config, model,
     checkpoint_path = Path(CKPT_PATH,checkpoint_name)
     checkpoint_path.mkdir(parents=True,exist_ok=True)   
 
-    writer = SummaryWriter(log_dir = f'{checkpoint_path}\logs')
+    writer = SummaryWriter(log_dir = Path(checkpoint_path,"logs"))
  
     max_iterations = config["train"]["num_iters"]    
     iter = iteration
@@ -49,6 +50,8 @@ def train_val(config, model,
                 validation_loader = next(validation_dataloaders)
 
         for batch in train_loader:
+
+            batch = move_to_device(batch, device)
             
             output = model(batch["raw"]["image"])
 
@@ -58,7 +61,7 @@ def train_val(config, model,
                                      grid_size= config["model"]["detector_head"]["grid_size"],
                                      include_mask=mask_loss,
                                      device=device)
-            writer.add_scalar("Detector loss", det_loss, iter)
+            writer.add_scalar("iter_loss\Detector loss", det_loss, iter)
             
             loss = det_loss
             
@@ -73,7 +76,7 @@ def train_val(config, model,
                                                 grid_size=config["model"]["detector_head"]["grid_size"],
                                                 include_mask=mask_loss,
                                                 device=device)
-                writer.add_scalar("Warped Detector loss", det_loss_warped, iter)
+                writer.add_scalar("iter_loss\Warped Detector loss", det_loss_warped, iter)
                 
                 if nerf_desc_loss:
                     desc_loss, positive_dist, negative_dist = descriptor_loss_NeRF(config=config["model"],
@@ -93,9 +96,9 @@ def train_val(config, model,
                                                                               include_mask=mask_loss,
                                                                               device=device)
                 
-                writer.add_scalar("Descriptor loss", desc_loss, iter)
-                writer.add_scalar("Positive Distribution", positive_dist, iter)
-                writer.add_scalar("Negative Distribution", negative_dist, iter)
+                writer.add_scalar("iter_loss\Descriptor loss", desc_loss, iter)
+                writer.add_scalar("margins\Positive Distribution", positive_dist, iter)
+                writer.add_scalar("margins\Negative Distribution", negative_dist, iter)
                 
                 loss += (det_loss_warped + desc_loss)
 
@@ -111,7 +114,7 @@ def train_val(config, model,
             if iter % config["save_or_validation_interval"] == 0:
 
                 running_loss = np.mean(running_loss)           
-                writer.add_scalar("Training loss", running_loss, iter)
+                writer.add_scalar("running_loss\Training loss", running_loss, iter)
 
                 if validation_loader is not None:
                     model.eval()
@@ -120,9 +123,9 @@ def train_val(config, model,
 
                     model.train()
                         
-                    writer.add_scalar("Validation loss", running_val_loss, iter)
-                    writer.add_scalar("Precision", precision, iter)
-                    writer.add_scalar("Recall", recall, iter)
+                    writer.add_scalar("running_loss\Validation loss", running_val_loss, iter)
+                    writer.add_scalar("metrics\Precision", precision, iter)
+                    writer.add_scalar("metrics\Recall", recall, iter)
                     
                     tqdm.write('Iteration: {}, Running Training loss: {:.4f}, Running Validation loss: {:.4f}, Precision: {:.4f}, Recall: {:.4f}'
                                .format(iter, running_loss, running_val_loss, precision, recall))
@@ -133,7 +136,7 @@ def train_val(config, model,
 
                 torch.save({"iteration":iter,
                             "model_state_dict":model.state_dict()},
-                            f'{checkpoint_path}\{checkpoint_name}_{iter}.pth')
+                            Path(checkpoint_path,f'{checkpoint_name}_{iter}.pth'))
                 
                 running_loss = []
                 
@@ -142,7 +145,7 @@ def train_val(config, model,
 
                 torch.save({"iteration":iter,
                             "model_state_dict":model.state_dict()},
-                            f'{checkpoint_path}\{checkpoint_name}_{iter}.pth')
+                            Path(checkpoint_path,f'{checkpoint_name}_{iter}.pth'))
                 Train = False
                 writer.flush()
                 writer.close()

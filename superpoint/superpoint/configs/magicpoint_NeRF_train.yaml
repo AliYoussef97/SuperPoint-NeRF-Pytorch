@@ -48,5 +48,5 @@ train:
     learning_rate: 0.001
 save_or_validation_interval: 1000
 ckpt_name: 'magicpoint_NeRF_v1_no_HA'
-pretraiend: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
+pretrained: 'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
 continue_training: False

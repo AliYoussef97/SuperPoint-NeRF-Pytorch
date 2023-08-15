@@ -30,7 +30,7 @@ class ExportDetections():
         """
         Where to save the outputs.
         """
-        output_dir = Path(f"{EXPER_PATH}\\outputs\\{self.config['data']['experiment_name']}\\{self.split}")
+        output_dir = Path(EXPER_PATH, 'outputs', self.config['data']['experiment_name'], self.split)
         if not output_dir.exists():
             os.makedirs(output_dir)
         return output_dir
@@ -81,7 +81,7 @@ class ExportDetections():
         for data in tqdm(self.dataloader, desc=f"Exporting detections",colour="green"):
 
             name = data["name"][0]
-            save_path = Path(f"{self.output_dir}\\{name}.npy")
+            save_path = Path(self.output_dir, '{}.npy'.format(name))
             if save_path.exists():
                 continue
            
@@ -141,7 +141,7 @@ class Export_Hpatches_Repeatability():
         """
         Where to save the outputs.
         """
-        output_dir = Path(f"{EXPER_PATH}\\repeatability\\{self.config['data']['experiment_name']}")
+        output_dir = Path(EXPER_PATH, 'repeatability', self.config['data']['experiment_name'])
         if not output_dir.exists():
             os.makedirs(output_dir)
         return output_dir
@@ -161,7 +161,7 @@ class Export_Hpatches_Repeatability():
                       "homography": data["homography"].squeeze().cpu().numpy()}
 
             filename = data['name'][0] if 'name' in data else str(i)
-            save_path = Path(f"{self.output_dir}\\{filename}.npz")
+            save_path = Path(self.output_dir, '{}.npz'.format(filename))
             np.savez_compressed(save_path, **output)
 
 
@@ -182,7 +182,7 @@ class Export_Hpatches_Descriptors():
         """
         Where to save the outputs.
         """
-        output_dir = Path(f"{EXPER_PATH}\\descriptors\\{self.config['data']['experiment_name']}")
+        output_dir = Path(EXPER_PATH, 'descriptors', self.config['data']['experiment_name'])
         if not output_dir.exists():
             os.makedirs(output_dir)
         return output_dir
@@ -209,5 +209,5 @@ class Export_Hpatches_Descriptors():
                       "homography": data["homography"].squeeze().cpu().numpy()}
 
             filename = data['name'][0] if 'name' in data else str(i)
-            save_path = Path(f"{self.output_dir}\\{filename}.npz")
+            save_path = Path(self.output_dir, "{}.npz".format(filename))
             np.savez_compressed(save_path, **output)

@@ -20,4 +20,4 @@ model:
     descriptor_head:
         descriptor_dim: [128,256]
         grid_size: 8
-pretraiend: 'Superpoint_Baseline\Superpoint_Baseline_600000.pth'
+pretrained: 'Superpoint_Baseline\Superpoint_Baseline_600000.pth'

@@ -26,7 +26,7 @@ class NeRF(Dataset):
         """
         List of images' path and names to be processed.
         """
-        data_dir = Path(f"{DATA_PATH}\\NeRF\\{self.config['data_dir']}\\images\\{self.action}")
+        data_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "images", self.action)
         image_paths = list(data_dir.iterdir())
         if self.config["truncate"]:
             image_paths = image_paths[:int(self.config["truncate"]*len(image_paths))]
@@ -37,22 +37,22 @@ class NeRF(Dataset):
         if self.config["has_labels"]:
 
             # Camera transformation
-            camera_transform_dir = Path(f"{DATA_PATH}\\NeRF\\{self.config['data_dir']}\\camera_transforms\\{self.action}")
+            camera_transform_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "camera_transforms", self.action)
             camera_transform_paths = list(camera_transform_dir.iterdir())
             camera_transform_paths = [str(p) for p in camera_transform_paths]
             files["camera_transform_paths"] = camera_transform_paths
 
             # Depth paths
-            depth_dir = Path(f"{DATA_PATH}\\NeRF\\{self.config['data_dir']}\\depth\\{self.action}")
+            depth_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "depth", self.action)
             depth_paths = list(depth_dir.iterdir())
             depth_paths = [str(p) for p in depth_paths]
             files["depth_paths"] = depth_paths
         
             # Label paths
-            label_dir = Path(f"{EXPER_PATH}\\{self.config['has_labels']}\\{self.action}")
+            label_dir = Path(EXPER_PATH, self.config["has_labels"], self.action)
             label_paths = []
             for n in files["names"]:
-                p = Path(label_dir,'{}.np'.format(n))
+                p = Path(label_dir,'{}.npy'.format(n))
                 label_paths.append(str(p))
             files["label_paths"] = label_paths
         
