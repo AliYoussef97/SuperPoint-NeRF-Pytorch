@@ -9,7 +9,7 @@ from tqdm import tqdm
 from superpoint.data.data_utils.homographic_augmentation import Homographic_aug
 from superpoint.models.model_utils.sp_utils import box_nms
 from superpoint.settings import EXPER_PATH
-
+from superpoint.utils.train_utils import move_to_device
 
 class ExportDetections():
     def __init__(self, config, model, dataloader, split, enable_HA, device):
@@ -79,6 +79,8 @@ class ExportDetections():
     @torch.no_grad()
     def homography_adaptation(self):
         for data in tqdm(self.dataloader, desc=f"Exporting detections",colour="green"):
+
+            data = move_to_device(data,self.device)
 
             name = data["name"][0]
             save_path = Path(self.output_dir, '{}.npy'.format(name))
@@ -150,7 +152,9 @@ class Export_Hpatches_Repeatability():
     def export_repeatability(self):
         
         for i, data in enumerate(tqdm(self.dataloader, desc=f"Exporting repeatability detections", colour="green")):
-            
+
+            data = move_to_device(data,self.device)
+
             prob1 = self.model(data["image"])["detector_output"]["prob_heatmap_nms"] # 1,H,W
             prob2 = self.model(data["warped_image"])["detector_output"]["prob_heatmap_nms"] # 1,H,W
 
@@ -191,6 +195,8 @@ class Export_Hpatches_Descriptors():
     def export_descriptors(self):
         
         for i, data in enumerate(tqdm(self.dataloader, desc=f"Exporting HPatches descriptors", colour="green")):
+
+            data = move_to_device(data,self.device)
 
             output_1 = self.model(data["image"])
             prob1 = output_1["detector_output"]["prob_heatmap_nms"]

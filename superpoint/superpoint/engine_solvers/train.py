@@ -61,7 +61,7 @@ def train_val(config, model,
                                      grid_size= config["model"]["detector_head"]["grid_size"],
                                      include_mask=mask_loss,
                                      device=device)
-            writer.add_scalar("iter_loss\Detector loss", det_loss, iter)
+            writer.add_scalar("iter_loss/Detector loss", det_loss, iter)
             
             loss = det_loss
             
@@ -76,7 +76,7 @@ def train_val(config, model,
                                                 grid_size=config["model"]["detector_head"]["grid_size"],
                                                 include_mask=mask_loss,
                                                 device=device)
-                writer.add_scalar("iter_loss\Warped Detector loss", det_loss_warped, iter)
+                writer.add_scalar("iter_loss/Warped Detector loss", det_loss_warped, iter)
                 
                 if nerf_desc_loss:
                     desc_loss, positive_dist, negative_dist = descriptor_loss_NeRF(config=config["model"],
@@ -96,9 +96,9 @@ def train_val(config, model,
                                                                               include_mask=mask_loss,
                                                                               device=device)
                 
-                writer.add_scalar("iter_loss\Descriptor loss", desc_loss, iter)
-                writer.add_scalar("margins\Positive Distribution", positive_dist, iter)
-                writer.add_scalar("margins\Negative Distribution", negative_dist, iter)
+                writer.add_scalar("iter_loss/Descriptor loss", desc_loss, iter)
+                writer.add_scalar("margins/Positive Distribution", positive_dist, iter)
+                writer.add_scalar("margins/Negative Distribution", negative_dist, iter)
                 
                 loss += (det_loss_warped + desc_loss)
 
@@ -114,7 +114,7 @@ def train_val(config, model,
             if iter % config["save_or_validation_interval"] == 0:
 
                 running_loss = np.mean(running_loss)           
-                writer.add_scalar("running_loss\Training loss", running_loss, iter)
+                writer.add_scalar("running_loss/Training loss", running_loss, iter)
 
                 if validation_loader is not None:
                     model.eval()
@@ -123,9 +123,9 @@ def train_val(config, model,
 
                     model.train()
                         
-                    writer.add_scalar("running_loss\Validation loss", running_val_loss, iter)
-                    writer.add_scalar("metrics\Precision", precision, iter)
-                    writer.add_scalar("metrics\Recall", recall, iter)
+                    writer.add_scalar("running_loss/Validation loss", running_val_loss, iter)
+                    writer.add_scalar("metrics/Precision", precision, iter)
+                    writer.add_scalar("metrics/Recall", recall, iter)
                     
                     tqdm.write('Iteration: {}, Running Training loss: {:.4f}, Running Validation loss: {:.4f}, Precision: {:.4f}, Recall: {:.4f}'
                                .format(iter, running_loss, running_val_loss, precision, recall))

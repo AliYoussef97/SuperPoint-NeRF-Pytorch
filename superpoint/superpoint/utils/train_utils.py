@@ -15,4 +15,4 @@ def move_to_device(obj, device):
       out.append(move_to_device(v, device))
     return out
   else:
-    raise obj
+    return obj
