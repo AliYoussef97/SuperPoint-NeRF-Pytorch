@@ -161,6 +161,8 @@ def validate(config, model, validation_loader, mask_loss, nerf_desc_loss , devic
     recall = []
 
     for val_batch in tqdm(validation_loader, desc="Validation",colour="blue"):
+
+        val_batch = move_to_device(val_batch, device)
         
         val_output = model(val_batch["raw"]["image"])
         
