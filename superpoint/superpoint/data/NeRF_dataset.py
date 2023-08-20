@@ -83,7 +83,7 @@ class NeRF(Dataset):
         return cam_intrinsic_matrix
     
 
-    def axis_transform(cam_matrix):
+    def axis_transform(self,cam_matrix):
         '''
         Transform camera transformation matrix axis.
         '''
@@ -116,7 +116,7 @@ class NeRF(Dataset):
             return random.choice(frames)
         
         if random_frame - 0.3*data_len < 0:
-            frames = np.arange(0.4*data_len,data_len,1)
+            frames = np.arange(0.5*data_len,data_len,1)
             return random.choice(frames)
         
         if random_frame + 0.3*data_len > data_len-1:
@@ -174,7 +174,7 @@ class NeRF(Dataset):
         if self.config["warped_pair"]:
             assert self.config["has_labels"], "Only for SuperPoint, not MagicPoint."
             
-            random_frame_idx = self.random_frame(index)
+            random_frame_idx = int(self.random_frame(index))
 
             warped_image = self.samples["image_paths"][random_frame_idx]
             warped_image = self.read_image(warped_image)
