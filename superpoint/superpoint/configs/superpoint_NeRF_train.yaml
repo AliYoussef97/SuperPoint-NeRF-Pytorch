@@ -7,15 +7,15 @@ data:
     downsample: False
     downsample_size: [240,320]
     fov: 44
-    batch_size: 32
+    batch_size: 2
     truncate: False
-    all_label_dirs: ['outputs/MP_NeRF_v1/Desk',
-                      'outputs/MP_NeRF_v1/Dining',
-                      'outputs/MP_NeRF_v1/Kitchen',
-                      'outputs/MP_NeRF_v1/Paintings',
-                      'outputs/MP_NeRF_v1/Art']
+    all_label_dirs: ['outputs/NeRF_SP_export/Desk',
+                      'outputs/NeRF_SP_export/Dining',
+                      'outputs/NeRF_SP_export/Kitchen',
+                      'outputs/NeRF_SP_export/Paintings',
+                      'outputs/NeRF_SP_export/Art']
     has_labels: ''
-    warped_pair: False
+    warped_pair: True
     augmentation:
         photometric:
             enable: True
@@ -43,10 +43,18 @@ model:
         nms: 8
         det_thresh: 0.001
         top_k: 0
+    descriptor_head:
+        descriptor_dim: [128,256]
+        grid_size: 8
+        positive_margin: 1.0
+        negative_margin: 0.2
+        lambda_d: 250
+        lambda_loss: 0.0001
+        normalise_descriptors: False
 train:
-    num_iters: 25000
+    num_iters: 100000
     learning_rate: 0.001
-save_or_validation_interval: 1000
-ckpt_name: 'MP_NeRF_v1'
-pretrained: 'magicpoint_syn_v1/magicpoint_syn_v1_200000.pth'
+save_or_validation_interval: 5000
+ckpt_name: 'SP_NeRF_finetuned_bound_frames'
+pretrained: 'magicpoint_COCO_v2_HA/magicpoint_COCO_v2_HA_18000.pth'
 continue_training: False

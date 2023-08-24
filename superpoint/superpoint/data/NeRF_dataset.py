@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 from torch.utils.data import Dataset
 import torchvision
+import torchvision.transforms.functional as TF
 from superpoint.data.data_utils.kp_utils import warp_points_NeRF, compute_keypoint_map, filter_points
 from superpoint.data.data_utils.photometric_augmentation import Photometric_aug
 from superpoint.settings import DATA_PATH, EXPER_PATH
@@ -16,7 +17,7 @@ class NeRF(Dataset):
         self.device = device
         self.action = "training" if task == "training" else "validation" if task == "validation" else "test"
         self.samples = self._init_dataset()
-        self.camera_intrinsic_matrix = self.get_camera_intrinsic()
+        self.camera_intrinsic_matrix = self.get_camera_intrinsic(self.config["image_size"],self.config["fov"])
         
         if self.config["augmentation"]["photometric"]["enable"]:
             self.photometric_aug = Photometric_aug(self.config["augmentation"]["photometric"])
@@ -27,51 +28,50 @@ class NeRF(Dataset):
         List of images' path and names to be processed.
         """
         data_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "images", self.action)
-        image_paths = list(data_dir.iterdir())
+        image_paths = sorted(list(data_dir.iterdir()))
         if self.config["truncate"]:
             image_paths = image_paths[:int(self.config["truncate"]*len(image_paths))]
         names = [p.stem for p in image_paths]
         image_paths = [str(p) for p in image_paths]
         files = {"image_paths":image_paths, "names":names}
 
+        camera_transform_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "camera_transforms", self.action)
+        depth_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "depth", self.action)
+        camera_transform_paths = []
+        depth_paths = []
+        for n in files["names"]:
+            p = Path(camera_transform_dir,'{}.npy'.format(n))
+            camera_transform_paths.append(str(p))
+            p = Path(depth_dir,'{}.npy'.format(n))
+            depth_paths.append(str(p))
+        files["camera_transform_paths"] = camera_transform_paths
+        files["depth_paths"] = depth_paths
+
         if self.config["has_labels"]:
-
-            # Camera transformation
-            camera_transform_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "camera_transforms", self.action)
-            camera_transform_paths = list(camera_transform_dir.iterdir())
-            camera_transform_paths = [str(p) for p in camera_transform_paths]
-            files["camera_transform_paths"] = camera_transform_paths
-
-            # Depth paths
-            depth_dir = Path(DATA_PATH, "NeRF", self.config["data_dir"], "depth", self.action)
-            depth_paths = list(depth_dir.iterdir())
-            depth_paths = [str(p) for p in depth_paths]
-            files["depth_paths"] = depth_paths
-        
-            # Label paths
+            # Load camera transformation matrix and depth map and labels.
             label_dir = Path(EXPER_PATH, self.config["has_labels"], self.action)
             label_paths = []
             for n in files["names"]:
                 p = Path(label_dir,'{}.npy'.format(n))
                 label_paths.append(str(p))
             files["label_paths"] = label_paths
-        
+            
         return files
 
     def __len__(self):
         return len(self.samples["image_paths"])
 
         
-    def get_camera_intrinsic(self):
+    def get_camera_intrinsic(self,shape,fov):
         '''
         Calculate camera intrinsic matrix.
         '''
-        H , W = self.config["image_size"] 
+        H, W = shape
 
         c_x = W//2
         c_y = H//2
 
-        fov = np.deg2rad(self.config["fov"])
+        fov = np.deg2rad(fov)
         F_L = c_y/np.tan(fov/2)
 
         cam_intrinsic_matrix = np.array([ [ F_L,0,c_x] , 
@@ -108,27 +108,26 @@ class NeRF(Dataset):
         data_len = len(self.samples["image_paths"])
         
         if random_frame == 0:
-            frames = np.arange(0.5*data_len,data_len,1)
+            frames = np.arange(random_frame+0.07*data_len,random_frame+0.12*data_len,1)
             return random.choice(frames)
         
         if random_frame == data_len-1:
-            frames = np.arange(0,0.5*data_len,1)
+            frames = np.arange(random_frame-0.07*data_len,random_frame-0.12*data_len,1)
             return random.choice(frames)
         
         if random_frame - 0.3*data_len < 0:
-            frames = np.arange(0.5*data_len,data_len,1)
+            frames = np.arange(random_frame+0.07*data_len,random_frame+0.12*data_len,1)
             return random.choice(frames)
         
         if random_frame + 0.3*data_len > data_len-1:
-            frames = np.arange(0,0.5*data_len,1)
+            frames = np.arange(random_frame-0.12*data_len,random_frame-0.07*data_len,1)
             return random.choice(frames)
         
         else:
-            return random.choice(np.concatenate((np.arange(0,0.2*data_len,1),
-                                                 np.arange(0.8*data_len,data_len,1)),
-                                                 axis=0))
+            return random.choice(np.concatenate((np.arange(random_frame-0.12*data_len,random_frame-0.07*data_len,1),
+                                                 np.arange(random_frame+0.07*data_len,random_frame+0.12*data_len,1))),
+                                                 axis=0)
             
-
 
     def read_image(self, image):
         image = torchvision.io.read_file(image)
@@ -136,6 +135,31 @@ class NeRF(Dataset):
         return image.squeeze(0).to(torch.float32).to(self.device)
     
 
+    def downsample_data(self, data):
+        
+        H_ds, W_ds = self.config["downsample_size"]
+        
+        i,j,h,w = torchvision.transforms.RandomCrop.get_params(data["raw"]["image"], output_size=(H_ds,W_ds))
+
+        data["raw"]["image"] = data["raw"]["image"][i:i+h, j:j+w]
+        data["warp"]["image"] = data["warp"]["image"][i:i+h, j:j+w]
+
+        data["raw"]["valid_mask"] = data["raw"]["valid_mask"][i:i+h, j:j+w]
+        data["warp"]["valid_mask"] = data["warp"]["valid_mask"][i:i+h, j:j+w]
+
+        data["raw"]["kpts_heatmap"] = data["raw"]["kpts_heatmap"][i:i+h, j:j+w]
+        data["warp"]["kpts_heatmap"] = data["warp"]["kpts_heatmap"][i:i+h, j:j+w]
+
+        data["raw"]["kpts"] = torch.nonzero(data["raw"]["kpts_heatmap"], as_tuple=False)
+        data["warp"]["kpts"] = torch.nonzero(data["warp"]["kpts_heatmap"], as_tuple=False)
+
+        data["raw"]["input_depth"] = data["raw"]["input_depth"][i:i+h, j:j+w]
+
+        data["camera_intrinsic_matrix"] = self.get_camera_intrinsic(self.config["downsample_size"],self.config["fov"])
+
+        return data
+
+    
     def __getitem__(self, index):
 
         image = self.samples["image_paths"][index]  
@@ -146,21 +170,20 @@ class NeRF(Dataset):
 
         data = {"raw":{'image':image},
                 "name":input_name}
+        input_transformation = np.load(self.samples["camera_transform_paths"][index])
+        input_transformation = self.axis_transform(input_transformation)
+        input_rotation, input_translation = self.get_rotation_translation(input_transformation)
+
+        input_depth = np.load(self.samples["depth_paths"][index])
+        input_depth = torch.as_tensor(input_depth, dtype=torch.float32, device=self.device)
+
+        data["raw"]["input_depth"] = input_depth
+        data["raw"]["input_rotation"] = input_rotation
+        data["raw"]["input_translation"] = input_translation
+        data["camera_intrinsic_matrix"] = self.camera_intrinsic_matrix
         
         # Add labels if exists.
         if self.config["has_labels"]: # Only for training/validaiton/test not exporting pseudo labels.
-
-            input_transformation = np.load(self.samples["camera_transform_paths"][index])
-            input_transformation = self.axis_transform(input_transformation)
-            input_rotation, input_translation = self.get_rotation_translation(input_transformation)
-    
-            input_depth = np.load(self.samples["depth_paths"][index])
-            input_depth = torch.as_tensor(input_depth, dtype=torch.float32, device=self.device)
-
-            data["raw"]["input_depth"] = input_depth
-            data["raw"]["input_rotation"] = input_rotation
-            data["raw"]["input_translation"] = input_translation
-            data["camera_intrinsic_matrix"] = self.camera_intrinsic_matrix
 
             points = self.samples["label_paths"][index]
             points = np.load(points)
@@ -168,8 +191,8 @@ class NeRF(Dataset):
             data["raw"]["kpts"] = points
             data["raw"]["kpts_heatmap"] = compute_keypoint_map(points, image.shape, self.device) # size=(H,W)
             data["raw"]["valid_mask"] = torch.ones_like(image, device=self.device, dtype=torch.int32) # size=(H,W)
-        
-        
+
+
         # Warped pair for SuperPoint (Only for SuperPoint, not MagicPoint)
         if self.config["warped_pair"]:
             assert self.config["has_labels"], "Only for SuperPoint, not MagicPoint."
@@ -218,6 +241,9 @@ class NeRF(Dataset):
             if self.config["augmentation"]["photometric"]["enable"]:
                 data["raw"]["image"] = self.photometric_aug(data["raw"]["image"])
                 data["raw"]["image"] = torch.as_tensor(data["raw"]["image"], dtype=torch.float32, device=self.device)
+
+            if self.config["downsample"]:
+                data = self.downsample_data(data)
             
         data["raw"]["image"] /= 255. # Normalize image to [0,1]
 
@@ -233,32 +259,31 @@ class NeRF(Dataset):
 
         output = {"raw": {"image":images},
                   "name":input_names}
-        
-        
+
+        input_depths = torch.stack([item['raw']['input_depth'] for item in batch]) # size=(batch_size,H,W)
+    
+        input_rotations = torch.stack([item['raw']['input_rotation'] for item in batch]) # size=(batch_size,3,3)
+    
+        input_translations = torch.stack([item['raw']['input_translation'] for item in batch]) # size=(batch_size,3,1)
+    
+        intrinsic_matrix = torch.stack([item['camera_intrinsic_matrix'] for item in batch]) # size=(batch_size,3,3)
+
+        output["raw"]["input_depth"] = input_depths # size=(batch_size,H,W)
+        output["raw"]["input_rotation"] = input_rotations # size=(batch_size,3,3)
+        output["raw"]["input_translation"] = input_translations # size=(batch_size,3,1)           
+        output["camera_intrinsic_matrix"] = intrinsic_matrix # size=(batch_size,3,3)
+
         if self.config["has_labels"]:
 
-
-            input_depths = torch.stack([item['raw']['input_depth'] for item in batch]) # size=(batch_size,H,W)
-        
-            input_rotations = torch.stack([item['raw']['input_rotation'] for item in batch]) # size=(batch_size,3,3)
-        
-            input_translations = torch.stack([item['raw']['input_translation'] for item in batch]) # size=(batch_size,3,1)
-        
-            intrinsic_matrix = torch.stack([item['camera_intrinsic_matrix'] for item in batch]) # size=(batch_size,3,3)
-        
             points = [item['raw']['kpts'] for item in batch]
 
             kp_heatmap = torch.stack([item['raw']['kpts_heatmap'] for item in batch])
 
             valid_mask = torch.stack([item['raw']['valid_mask'] for item in batch])
 
-            output["raw"]["input_depth"] = input_depths # size=(batch_size,H,W)
-            output["raw"]["input_rotation"] = input_rotations # size=(batch_size,3,3)
-            output["raw"]["input_translation"] = input_translations # size=(batch_size,3,1)
             output["raw"]["kpts"] = points # size=(N,2)
             output["raw"]["kpts_heatmap"] = kp_heatmap # size=(batch_size,H,W)
             output["raw"]["valid_mask"] = valid_mask # size=(batch_size,H,W)
-            output["camera_intrinsic_matrix"] = intrinsic_matrix # size=(batch_size,3,3)
         
 
         if self.config["warped_pair"]:

@@ -20,7 +20,7 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                             collate_fn=dataset["train"].batch_collator, 
                                             shuffle=True,
                                             pin_memory=True, 
-                                            num_workers=4),
+                                            num_workers=0),
                             "validation":None}
             if validate_training: 
 
@@ -48,7 +48,7 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                             collate_fn=dataset["train"].batch_collator, 
                                             shuffle=True,
                                             pin_memory=True, 
-                                            num_workers=4))
+                                            num_workers=0))
           
             if validate_training:
                 
@@ -79,14 +79,14 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
                                           pin_memory=True,
                                           num_workers=0)}
         
-    if task == "export_pseudo_labels":
+    if task == "export_pseudo_labels" or task == "export_NeRF_labels":
         dataset = getattr(data_script,class_name)(config["data"], task=export_split, device=device)
         data_loader = DataLoader(dataset,
                                  batch_size=batch_size,
                                  collate_fn=dataset.batch_collator,
                                  shuffle=False,
                                  pin_memory=True,
-                                 num_workers=4)
+                                 num_workers=0)
     
 
     if task == "export_HPatches_Repeatability" or task == "export_HPatches_Descriptors":
@@ -94,9 +94,9 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
         data_loader = DataLoader(dataset,
                                  batch_size=batch_size,
                                  collate_fn=dataset.batch_collator,
-                                 shuffle=False,
+                                 shuffle=True,
                                  pin_memory=True,
-                                 num_workers=4)
+                                 num_workers=0)
         
     
     return data_loader

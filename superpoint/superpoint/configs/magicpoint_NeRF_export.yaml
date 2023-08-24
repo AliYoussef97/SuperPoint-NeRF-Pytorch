@@ -1,8 +1,8 @@
 data:
     name: 'NeRF_dataset'
     class_name: 'NeRF'
-    data_dir: 'Paintings'
-    experiment_name: 'NeRF_SP_export\Paintings' #'coco_export_v1_HA'
+    data_dir: 'Dining'
+    experiment_name: 'MP_NeRF_v1/Dining'
     image_size: [480, 640]
     fov: 44
     has_labels: False
@@ -10,24 +10,8 @@ data:
     augmentation:
         photometric:
             enable: False
-    batch_size: 1
+    batch_size: 10
     truncate: False
-homography_adaptation:
-    num: 0
-    aggregation: 'sum'
-    filter_counts: 0
-    valid_border_margin: 3
-    params:
-        translation: true
-        rotation: true
-        scaling: true
-        perspective: true
-        scaling_amplitude: 0.2
-        perspective_amplitude_x: 0.2
-        perspective_amplitude_y: 0.2
-        allow_artifacts: true
-        patch_ratio: 0.85
-        max_angle: 1.57
 model:
     script: 'SuperPoint'
     class_name: 'SuperPoint'
@@ -36,7 +20,7 @@ model:
     detector_head: 
         detector_dim: [128,256]
         grid_size: 8
-        nms: 4
+        nms: 8
         det_thresh: 0.015
         top_k: 0
-pretrained: 'magicpoint_COCO_v2_HA\magicpoint_COCO_v2_HA_20000.pth' #'magicpoint_syn_v1_continued_no_mask\magicpoint_syn_v1_continued_no_mask.pth'
+pretrained: 'magicpoint_syn_v1/magicpoint_syn_v1_200000.pth'

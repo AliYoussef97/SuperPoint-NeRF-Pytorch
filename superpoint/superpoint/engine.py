@@ -8,7 +8,7 @@ from superpoint.settings import CKPT_PATH
 from superpoint.utils.get_model import get_model
 from superpoint.utils.data_loaders import get_loader
 from superpoint.engine_solvers.train import train_val
-from superpoint.engine_solvers.export import ExportDetections, Export_Hpatches_Repeatability, Export_Hpatches_Descriptors
+from superpoint.engine_solvers.export import ExportDetections, Export_Hpatches_Repeatability, Export_Hpatches_Descriptors, ExportNeRFDetections
 
 
 @dataclass
@@ -52,6 +52,7 @@ class main():
                  config_path: str,
                  task: Literal["train",
                                "export_pseudo_labels",
+                               "export_NeRF_labels",
                                "export_HPatches_Repeatability",
                                "export_HPatches_Descriptors"],
                 training:options,
@@ -145,6 +146,30 @@ class main():
             if task == "export_HPatches_Descriptors":
                 self.export_HPatches_Descriptors()
 
+
+        if task == "export_NeRF_labels":
+
+            self.pseudo_split = pseudo_labels.split
+
+            self.model = get_model(self.config["model"], device=self.device)
+            self.dataloader = get_loader(self.config, task, device="cpu", export_split=self.pseudo_split)
+
+            assert self.config["pretrained"], "Use pretrained model to export pseudo labels."
+            
+            model_state_dict =  self.model.state_dict()
+            
+            pretrained_dict = torch.load(Path(CKPT_PATH,self.config["pretrained"]), map_location=self.device)
+            pretrained_state = pretrained_dict["model_state_dict"]
+
+            for k,v in pretrained_state.items():
+                if k in model_state_dict.keys():
+                    model_state_dict[k] = v
+            
+            self.model.load_state_dict(model_state_dict)
+            print(f'\033[92m✅ Loaded pretrained model \033[0m')
+
+            self.export_NeRF_labels()
+
     
     def train(self):
 
@@ -173,6 +198,10 @@ class main():
     def export_HPatches_Descriptors(self):
         
         Export_Hpatches_Descriptors(self.config, self.model, self.dataloader, self.device)
+    
+    def export_NeRF_labels(self):
+            
+        ExportNeRFDetections(self.config, self.model, self.dataloader,self.pseudo_split, self.device)
 
 
 if __name__ == '__main__':
