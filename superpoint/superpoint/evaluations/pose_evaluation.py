@@ -1,6 +1,5 @@
 # Parts of this code is from SuperGlue[https://github.com/magicleap/SuperGluePretrainedNetwork]
 
-
 from superpoint.settings import DATA_PATH,CKPT_PATH
 from superpoint.utils.get_model import get_model
 import torch
