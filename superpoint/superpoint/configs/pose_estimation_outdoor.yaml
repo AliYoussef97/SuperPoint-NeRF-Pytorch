@@ -1,7 +1,7 @@
 data:
     gt_pairs: 'YFCC/raw_data/yfcc_test_pairs_with_gt.txt'
     images_path:  YFCC/raw_data/yfcc100m 
-    resize: [900,1200]
+    resize: [1000]
     epi_thrsehold: 0.0001
     resize_float: true
 model:

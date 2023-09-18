@@ -1,3 +1,5 @@
+# Parts of code inspired from SuperPoint[https://github.com/rpautrat/SuperPoint]
+
 import cv2
 import numpy as np
 import torch
