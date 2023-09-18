@@ -11,7 +11,7 @@
   ### 1.1 Create Conda Environment ###
 
   ```
-    conda create -n UCL-Project -y python=3.8
+    conda create -n SP-Nerf -y python=3.8
   ```
 
   ### 1.2 Dependencies ###
