@@ -1,11 +1,12 @@
 data:
     name: 'HPatches'
     class_name: 'HPatches'
-    experiment_name: 'superpoint_descriptors_all_nms_4'
-    alteration: 'all' #or 'i' 'v' 
+    experiment_name: 'Superpoint_Baseline_nms_4'
+    alteration: 'v' #or 'i' 'all' 
     batch_size: 1
     preprocessing:
         resize: [480,640] 
+    correctness_thresh: 3
 model:
     script: 'SuperPoint'
     class_name: 'SuperPoint'
@@ -14,10 +15,10 @@ model:
     detector_head: 
         detector_dim: [128,256]
         grid_size: 8
-        nms: 8
+        nms: 4
         det_thresh: 0.001
         top_k: 1000
     descriptor_head:
         descriptor_dim: [128,256]
         grid_size: 8
-pretrained: 'Superpoint_Baseline\Superpoint_Baseline_600000.pth'
+pretrained: 'Superpoint_Baseline/Superpoint_Baseline_420000.pth'

@@ -12,6 +12,8 @@ from superpoint.settings import EXPER_PATH
 from superpoint.utils.train_utils import move_to_device
 from superpoint.data.data_utils.kp_utils import warp_points_NeRF, filter_points
 import matplotlib.pyplot as plt
+import random
+
 class ExportDetections():
     def __init__(self, config, model, dataloader, split, enable_HA, device):
         
@@ -316,6 +318,7 @@ class ExportNeRFDetections():
 
                 input_index = j
                 other_index = [k for k in range(len(data["name"])) if k != input_index]
+                other_index = random.choices(other_index,k=int(0.75*len(other_index)))
 
                 input_image = data["raw"]["image"][j,...].unsqueeze(0)
                 input_rotation = data["raw"]["input_rotation"][j,...]

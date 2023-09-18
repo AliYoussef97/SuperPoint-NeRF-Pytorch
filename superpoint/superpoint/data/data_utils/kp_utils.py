@@ -84,22 +84,22 @@ def warp_points_NeRF(points, depth, cam_intrinsic_matrix, input_rotation, input_
     for dp in depth:     
         depth_value_sample = []
         for p in points:
-            if int(p[0]) <= 1 or int(p[1]) <= 1 or int(p[0]) >= dp.shape[0]-1 or int(p[1]) >= dp.shape[1]-1:
-                # Case where can not create a 3x3 depth patch, close to image border.
+            if int(p[0]) <= 2 or int(p[1]) <= 2 or int(p[0]) >= dp.shape[0]-2 or int(p[1]) >= dp.shape[1]-2:
+                # Case where can not create a 5x5 depth patch, close to image border.
                 depth_current = dp[int(p[0]),int(p[1])]
                 depth_value_sample.append(depth_current)
                 continue
             else:
-                # Case where can create a 3x3 depth patch.
-                depth_values = dp[int(p[0])-1:int(p[0])+2,int(p[1])-1:int(p[1])+2]
+                # Case where can create a 5x5 depth patch.
+                depth_values = dp[int(p[0])-2:int(p[0])+3,int(p[1])-2:int(p[1])+3]
                 depth_values_flattened = depth_values.flatten()
                 min_depth, max_depth = torch.min(depth_values_flattened), torch.max(depth_values_flattened)
                 if (max_depth - min_depth) >= 0.03:
-                    # Case where there is a large difference in depth values in the 3x3 depth patch.
+                    # Case where there is a large difference in depth values in the 5x5 depth patch.
                     # most likely at the edge of an object.
                     depth_value_sample.append(min_depth)
                 else:
-                    # Case where there is a small difference in depth values in the 3x3 depth patch.
+                    # Case where there is a small difference in depth values in the 5x5 depth patch.
                     depth_current = dp[int(p[0]),int(p[1])]
                     depth_value_sample.append(depth_current)
 

@@ -1,5 +1,3 @@
-# This code is from Superpoint[https://github.com/rpautrat/SuperPoint
-
 import torch
 import torchvision
 

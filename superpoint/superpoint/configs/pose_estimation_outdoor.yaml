@@ -1,0 +1,21 @@
+data:
+    gt_pairs: 'YFCC/raw_data/yfcc_test_pairs_with_gt.txt'
+    images_path:  YFCC/raw_data/yfcc100m 
+    resize: [900,1200]
+    epi_thrsehold: 0.0001
+    resize_float: true
+model:
+    script: 'SuperPoint'
+    class_name: 'SuperPoint'
+    model_name: 'superpoint'
+    vgg_cn: [64,64,64,64,128,128,128,128]
+    detector_head: 
+        detector_dim: [128,256]
+        grid_size: 8
+        det_thresh: 0.001
+        nms: 3
+        top_k: 2048
+    descriptor_head:
+        descriptor_dim: [128,256]
+        grid_size: 8
+pretrained: 'SP_NeRF_v3/SP_NeRF_v3_440000.pth'

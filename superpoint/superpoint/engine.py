@@ -120,7 +120,6 @@ class main():
             self.export_pseudo_labels()
 
 
-
         if task == "export_HPatches_Repeatability" or task == "export_HPatches_Descriptors":
 
             self.model = get_model(self.config["model"], device=self.device)
@@ -198,6 +197,7 @@ class main():
     def export_HPatches_Descriptors(self):
         
         Export_Hpatches_Descriptors(self.config, self.model, self.dataloader, self.device)
+    
     
     def export_NeRF_labels(self):
             

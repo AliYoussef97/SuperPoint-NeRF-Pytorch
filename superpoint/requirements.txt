@@ -1,0 +1,16 @@
+imageio==2.31.1
+kornia==0.7.0
+matplotlib==3.7.1
+numpy==1.24.3
+opencv_python==4.6.0.66
+opencv_python_headless==4.8.0.74
+pypng==0.20220715.0
+PyYAML==6.0.1
+Requests==2.31.0
+scipy==1.11.2
+--extra-index-url https://download.pytorch.org/whl/cu117
+torch==2.0.1+cu117
+--extra-index-url https://download.pytorch.org/whl/cu117
+torchvision==0.15.2+cu117
+tqdm==4.65.0
+tyro==0.5.7

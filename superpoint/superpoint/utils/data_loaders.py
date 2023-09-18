@@ -94,7 +94,7 @@ def get_loader(config, task, device="cpu", validate_training=False, export_split
         data_loader = DataLoader(dataset,
                                  batch_size=batch_size,
                                  collate_fn=dataset.batch_collator,
-                                 shuffle=True,
+                                 shuffle=False,
                                  pin_memory=True,
                                  num_workers=0)
         

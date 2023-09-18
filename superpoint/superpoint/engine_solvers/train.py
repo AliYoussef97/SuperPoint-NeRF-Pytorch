@@ -187,7 +187,7 @@ def validate(config, model, validation_loader, mask_loss, nerf_desc_loss , devic
                                                 device=device)
             
             if nerf_desc_loss:
-                val_desc_loss = descriptor_loss_NeRF(config=config["model"],
+                val_desc_loss, _, _ = descriptor_loss_NeRF(config=config["model"],
                                                      data=val_batch,
                                                      descriptors=val_output["descriptor_output"]["desc_raw"],
                                                      warped_descriptors=val_warped_output["descriptor_output"]["desc_raw"],
@@ -197,7 +197,7 @@ def validate(config, model, validation_loader, mask_loss, nerf_desc_loss , devic
 
 
             else:
-                val_desc_loss = descriptor_loss(config=config["model"],
+                val_desc_loss, _, _ = descriptor_loss(config=config["model"],
                                                 descriptors=val_output["descriptor_output"]["desc_raw"],
                                                 warped_descriptors=val_warped_output["descriptor_output"]["desc_raw"],
                                                 homographies=val_batch["homography"],

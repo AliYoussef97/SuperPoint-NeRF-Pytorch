@@ -1,7 +1,7 @@
 data:
     name: 'COCO'
     class_name: 'COCO'
-    has_labels: 'outputs\coco_export_v3_HA'
+    has_labels: 'outputs/coco_export_v3_HA'
     preprocessing:
         resize: [240, 320] 
     batch_size: 2
@@ -39,7 +39,7 @@ data:
                 patch_ratio: 0.85
                 max_angle: 1.57
                 allow_artifacts: true
-                translation_overflow: 0.05
+                translation_overflow: 0.
             valid_border_margin: 3
 model:
     script: 'SuperPoint'
@@ -61,9 +61,9 @@ model:
         lambda_loss: 0.0001
         normalise_descriptors: False
 train:
-    num_iters: 600000
+    num_iters: 450000
     learning_rate: 0.001
-save_or_validation_interval: 10000
+save_or_validation_interval: 5000
 ckpt_name: 'Superpoint_Baseline'
-pretrained: 'magicpoint_COCO_v2_HA\magicpoint_COCO_v2_HA_20000.pth'
+pretrained: 'magicpoint_COCO_v2_HA/magicpoint_COCO_v2_HA_18000.pth'
 continue_training: False

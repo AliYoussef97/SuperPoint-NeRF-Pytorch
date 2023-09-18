@@ -1,8 +1,8 @@
 data:
     name: 'NeRF_dataset'
     class_name: 'NeRF'
-    data_dir: 'Dining'
-    experiment_name: 'MP_NeRF_v1/Dining'
+    data_dir: 'Train'
+    experiment_name: 'MP_NeRF_v3/Train'
     image_size: [480, 640]
     fov: 44
     has_labels: False
@@ -10,7 +10,7 @@ data:
     augmentation:
         photometric:
             enable: False
-    batch_size: 10
+    batch_size: 20
     truncate: False
 model:
     script: 'SuperPoint'
@@ -20,7 +20,7 @@ model:
     detector_head: 
         detector_dim: [128,256]
         grid_size: 8
-        nms: 8
+        nms: 4
         det_thresh: 0.015
         top_k: 0
-pretrained: 'magicpoint_syn_v1/magicpoint_syn_v1_200000.pth'
+pretrained: 'MP_NeRF_v2/MP_NeRF_v2_25000.pth'

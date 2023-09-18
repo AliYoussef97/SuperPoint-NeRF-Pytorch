@@ -108,25 +108,25 @@ class NeRF(Dataset):
         data_len = len(self.samples["image_paths"])
         
         if random_frame == 0:
-            frames = np.arange(random_frame+0.07*data_len,random_frame+0.12*data_len,1)
+            frames = np.arange(random_frame+0.07*data_len,random_frame+0.15*data_len,1)
             return random.choice(frames)
         
         if random_frame == data_len-1:
-            frames = np.arange(random_frame-0.07*data_len,random_frame-0.12*data_len,1)
+            frames = np.arange(random_frame-0.15*data_len,random_frame-0.07*data_len,1)
             return random.choice(frames)
         
-        if random_frame - 0.3*data_len < 0:
-            frames = np.arange(random_frame+0.07*data_len,random_frame+0.12*data_len,1)
+        if random_frame - 0.15*data_len < 0:
+            frames = np.arange(random_frame+0.07*data_len,random_frame+0.15*data_len,1)
             return random.choice(frames)
         
-        if random_frame + 0.3*data_len > data_len-1:
-            frames = np.arange(random_frame-0.12*data_len,random_frame-0.07*data_len,1)
+        if random_frame + 0.15*data_len > data_len-1:
+            frames = np.arange(random_frame-0.15*data_len,random_frame-0.07*data_len)
             return random.choice(frames)
         
         else:
-            return random.choice(np.concatenate((np.arange(random_frame-0.12*data_len,random_frame-0.07*data_len,1),
-                                                 np.arange(random_frame+0.07*data_len,random_frame+0.12*data_len,1))),
-                                                 axis=0)
+            return random.choice(np.concatenate((np.arange(random_frame-0.15*data_len,random_frame-0.07*data_len,1),
+                                                 np.arange(random_frame+0.07*data_len,random_frame+0.15*data_len,1)),
+                                                 axis=0))
             
 
     def read_image(self, image):

@@ -159,6 +159,9 @@ def descriptor_loss_NeRF(config,
         descriptors = F.normalize(descriptors, p=2, dim=1)
         warped_descriptors = F.normalize(warped_descriptors, p=2, dim=1)
         desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
+        # Use the following if running out of memory
+        # desc_dot = torch.einsum("bcxyij,bcijkl->bxykl",descriptors,warped_descriptors)
+        
         desc_dot = F.relu(desc_dot)
         
         desc_dot = torch.reshape(F.normalize(torch.reshape(desc_dot, [B, Hc, Wc, Hc * Wc]),
@@ -173,6 +176,8 @@ def descriptor_loss_NeRF(config,
         s = (cell_distances<=(grid_size)).to(torch.float32) # (B,Hc,Wc,Hc,Wc)
 
         desc_dot = torch.sum(descriptors * warped_descriptors, dim=1)
+        # Use the following is running out of memory
+        # desc_dot = torch.einsum("bcxyij,bcijkl->bxykl",descriptors,warped_descriptors)
 
 
     positive_dist = torch.maximum(torch.tensor(0.,device=device), positive_margin - desc_dot)

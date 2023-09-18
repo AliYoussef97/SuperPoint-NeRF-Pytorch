@@ -4,9 +4,8 @@ import numpy as np
 import cv2
 from os import path as osp
 from glob import glob
-
+from scipy.spatial.transform import Rotation as Rot
 from superpoint.settings import EXPER_PATH
-
 
 def get_paths(exper_name):
     """
@@ -77,6 +76,7 @@ def compute_homography(data, keep_k_points=1000, correctness_thresh=3, orb=False
     else:
         bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
     matches = bf.match(desc, warped_desc)
+    matches = sorted(matches,key=lambda x:(x.distance<0.25))
     matches_idx = np.array([m.queryIdx for m in matches])
     if len(matches_idx) == 0:  # No match found
         return {'correctness': 0.,
@@ -88,11 +88,12 @@ def compute_homography(data, keep_k_points=1000, correctness_thresh=3, orb=False
     m_keypoints = keypoints[matches_idx, :]
     matches_idx = np.array([m.trainIdx for m in matches])
     m_warped_keypoints = warped_keypoints[matches_idx, :]
+        
 
     # Estimate the homography between the matches using RANSAC
     H, inliers = cv2.findHomography(m_keypoints[:, [1, 0]],
                                     m_warped_keypoints[:, [1, 0]],
-                                    cv2.RANSAC)
+                                    cv2.RANSAC,maxIters=3000)
     if H is None:
         return {'correctness': 0.,
                 'keypoints1': keypoints,
@@ -114,11 +115,13 @@ def compute_homography(data, keep_k_points=1000, correctness_thresh=3, orb=False
     warped_corners = warped_corners[:, :2] / warped_corners[:, 2:]
     mean_dist = np.mean(np.linalg.norm(real_warped_corners - warped_corners, axis=1))
     correctness = float(mean_dist <= correctness_thresh)
-
+    matching_score = len(m_keypoints)/len(keypoints)
     return {'correctness': correctness,
             'keypoints1': keypoints,
             'keypoints2': warped_keypoints,
             'matches': matches,
+            'matching_score': matching_score,
+            'mean_dist':mean_dist,
             'inliers': inliers,
             'homography': H}
 
