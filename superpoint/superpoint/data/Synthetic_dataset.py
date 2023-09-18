@@ -88,7 +88,7 @@ class SyntheticShapes(Dataset):
             im_dir.mkdir(parents=True, exist_ok=True)
             pts_dir.mkdir(parents=True, exist_ok=True)
 
-            for i in tqdm(range(size), desc=split, leave=False):
+            for i in tqdm(range(size), desc="Generating Synthetic Shapes", leave=False):
 
                 image = Synthetic_data.generate_background(
                     self.config["generation"]["image_size"],
