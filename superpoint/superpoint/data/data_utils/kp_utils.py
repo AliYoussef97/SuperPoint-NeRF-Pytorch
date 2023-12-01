@@ -10,13 +10,14 @@ def filter_points(points, shape, device='cpu', return_mask=False):
         points: (N,2)
     """
     if len(points)!=0:
-        mask = (points >= 0) & (points <= torch.tensor(shape,dtype=torch.float32,device=device)-1)
-        mask = torch.logical_and(mask[:,0], mask[:,1])
+        H,W = shape
+        mask  = (points[:,0] >= 0) & (points[:,0] < H-1) & (points[:,1] >= 0) & (points[:,1] < W-1)
         if return_mask:
-            return points[mask], mask    
+            return points[mask], mask
         return points[mask]
     else:
         return points
+
 
 def compute_keypoint_map(points, shape, device='cpu'):
     """
@@ -26,11 +27,12 @@ def compute_keypoint_map(points, shape, device='cpu'):
     output:
         kmap: (H,W)
     """
-    coord = torch.minimum(torch.round(points).to(torch.int32), 
-                          torch.tensor(shape,dtype=torch.int32,device=device)-1)
-    kmap = torch.zeros((shape), dtype=torch.int32, device=device)   
-    kmap[coord[:,0],coord[:,1]] = 1
-    return kmap
+    H, W = shape
+    coord = torch.round(points).to(torch.int32)
+    mask = (coord[:, 0] >= 0) & (coord[:, 0] < H-1) & (coord[:, 1] >= 0) & (coord[:, 1] < W-1)
+    k_map = torch.zeros(shape, dtype=torch.int32, device=device)
+    k_map[coord[mask, 0], coord[mask, 1]] = 1
+    return k_map
 
 
 def warp_points(points, homography, device='cpu'):
