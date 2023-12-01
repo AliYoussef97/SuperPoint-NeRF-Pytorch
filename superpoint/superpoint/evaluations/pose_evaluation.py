@@ -202,7 +202,7 @@ def estimate_pose(kpts0, kpts1, K0, K1, thresh, conf=0.99999):
     if len(kpts0) < 5:
         return None
 
-    f_mean = np.mean([K0[0, 0], K0[1, 1], K1[0, 0], K1[1, 1]])
+    f_mean = np.mean([K0[0, 0], K1[1, 1], K0[0, 0], K1[1, 1]])
     norm_thresh = thresh / f_mean
 
     kpts0 = (kpts0 - K0[[0, 1], [2, 2]][None]) / K0[[0, 1], [0, 1]][None]
