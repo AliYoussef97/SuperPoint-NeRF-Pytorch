@@ -1,10 +1,9 @@
-  # Improving Visual Landmark Detection and Matching for Video-based Mapping using NeRF-based View Generation and Self-Supervised Machine Learning
+  # Improving Relative Pose Estimation of Learning-based Feature Point Detectors and Descriptors using Novel-View Synthesis
 
-  The project aims to enhance [SuperPoint](https://arxiv.org/abs/1712.07629), a real-time feature point detection and description tool, by incorporating techniques such as [NeRF](https://arxiv.org/abs/2003.08934)-based view generation and self-supervised machine learning. The proposed approach focuses on improving the model's geometric consistency and overall performance. 
+  The project aims to enhance [SuperPoint](https://arxiv.org/abs/1712.07629) relative pose estimation, by incorporating techniques such as [NeRF](https://arxiv.org/abs/2003.08934)-based view generation and perspective projection geometry. 
 
   Supervised by: Dr. Francisco Porto Guerra E Vasconcelos
 
-  ***This project is currently a work in progress***
 
   ## 1. Installation ##
 
